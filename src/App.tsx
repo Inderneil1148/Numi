@@ -30,6 +30,7 @@ import { TagAnalytics } from './components/TagAnalytics';
 import { AnalyticsView } from './components/AnalyticsView';
 import { TransactionModal } from './components/TransactionModal';
 import { SettingsModal } from './components/SettingsModal';
+import { DownloadBanner } from './components/DownloadBanner';
 
 export default function App() {
   const { tap, success, warning } = useHaptics();
@@ -39,6 +40,20 @@ export default function App() {
   const [tags, setTags] = useState<CustomTag[]>(loadStoredTags);
   const [currency, setCurrency] = useState<CurrencyConfig>(loadStoredCurrency);
   const [budget, setBudget] = useState<BudgetConfig>(loadStoredBudget);
+
+  // Top Download Banner State
+  const [showDownloadBanner, setShowDownloadBanner] = useState<boolean>(() => {
+    return localStorage.getItem('numi_download_banner_hidden') !== 'true';
+  });
+
+  const handleToggleDownloadBanner = (show: boolean) => {
+    setShowDownloadBanner(show);
+    if (show) {
+      localStorage.removeItem('numi_download_banner_hidden');
+    } else {
+      localStorage.setItem('numi_download_banner_hidden', 'true');
+    }
+  };
 
   // View States
   const [activeTab, setActiveTab] = useState<ActiveTab>('ledger');
@@ -264,6 +279,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] text-[#1D1D1F] flex flex-col">
+      {/* Top Download Smart Banner */}
+      {showDownloadBanner && (
+        <DownloadBanner
+          onDismiss={() => handleToggleDownloadBanner(false)}
+        />
+      )}
+
       {/* Responsive layout container: seamless across mobile, tablet, and desktop */}
       <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col">
         {/* Top Header with Responsive Time Filter, Desktop Navigation & Currency Badge */}
@@ -406,6 +428,8 @@ export default function App() {
           onDeleteAllData={handleDeleteAllData}
           onLoadDemoData={handleLoadDemoData}
           onImportData={handleImportData}
+          showDownloadBanner={showDownloadBanner}
+          onToggleDownloadBanner={handleToggleDownloadBanner}
         />
 
         {/* Global Toast Notification */}

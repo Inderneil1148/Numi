@@ -1,0 +1,23 @@
+{
+  "name": "Numi - Minimal Expense & Tag Tracker",
+  "short_name": "Numi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
+  "description": "Minimal, mobile-first personal finance tracker with custom tagging, visual clarity, and precise budget insights.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/numi-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
 import { NumiLogo } from './NumiLogo';
@@ -27,6 +28,8 @@ interface SettingsModalProps {
   onDeleteAllData: () => void;
   onLoadDemoData?: () => void;
   onImportData: (data: { transactions: Transaction[]; tags: CustomTag[] }) => void;
+  showDownloadBanner?: boolean;
+  onToggleDownloadBanner?: (show: boolean) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -41,6 +44,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onDeleteAllData,
   onLoadDemoData,
   onImportData,
+  showDownloadBanner = true,
+  onToggleDownloadBanner,
 }) => {
   const { tap, success, warning } = useHaptics();
   const [budgetInput, setBudgetInput] = useState(budget.monthlyLimit.toString());
@@ -235,6 +240,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </form>
           </div>
+
+          {/* App Download Banner Display Switch */}
+          {onToggleDownloadBanner && (
+            <div className="space-y-1.5">
+              <span className="text-[12px] font-semibold text-[#86868B] uppercase tracking-wider px-3 flex items-center gap-1.5">
+                <ArrowDownToLine size={13} />
+                <span>App Banner</span>
+              </span>
+
+              <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-black/[0.04] p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-[#1D1D1F] block">
+                    Top Download Banner
+                  </span>
+                  <span className="text-[11px] text-[#86868B]">
+                    App install & Add to Home Screen banner at the top
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    tap('medium');
+                    onToggleDownloadBanner(!showDownloadBanner);
+                  }}
+                  className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                    showDownloadBanner ? 'bg-[#34C759]' : 'bg-[#D1D1D6]'
+                  }`}
+                  aria-label="Toggle download banner"
+                >
+                  <div
+                    className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                      showDownloadBanner ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Data Management Section */}
           <div className="space-y-1.5">
