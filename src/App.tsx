@@ -17,6 +17,7 @@ import {
   loadStoredBudget,
   saveStoredBudget,
   generateSeedTransactions,
+  clearAllTransactionsAndData,
 } from './utils/storage';
 import { DEFAULT_CATEGORIES, DEFAULT_TAGS, TAG_COLOR_PALETTE } from './utils/constants';
 import { useHaptics } from './hooks/useHaptics';
@@ -60,6 +61,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Filter transactions by timeFilter
   const timeFilteredTransactions = useMemo(() => {
@@ -219,13 +221,29 @@ export default function App() {
     }
   };
 
-  const handleResetData = () => {
+  const handleDeleteAllData = () => {
     warning();
+    setTransactions([]);
+    setSelectedTag(null);
+    clearAllTransactionsAndData();
+    setToastMessage('✓ All transactions erased. Everything reset to zero.');
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+  };
+
+  const handleLoadDemoData = () => {
+    success();
     const seeded = generateSeedTransactions();
     setTransactions(seeded);
     saveTransactions(seeded);
     setTags(DEFAULT_TAGS);
     saveStoredTags(DEFAULT_TAGS);
+    localStorage.removeItem('numi_finance_cleared');
+    setToastMessage('✓ Sample demo transactions loaded.');
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
   };
 
   const handleImportData = (data: { transactions: Transaction[]; tags: CustomTag[] }) => {
@@ -385,9 +403,17 @@ export default function App() {
           }}
           transactions={transactions}
           tags={tags}
-          onResetData={handleResetData}
+          onDeleteAllData={handleDeleteAllData}
+          onLoadDemoData={handleLoadDemoData}
           onImportData={handleImportData}
         />
+
+        {/* Global Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-[#1D1D1F] text-white text-xs font-semibold rounded-full shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200">
+            <span>{toastMessage}</span>
+          </div>
+        )}
       </div>
     </div>
   );

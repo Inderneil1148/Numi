@@ -231,6 +231,18 @@ export function generateSeedTransactions(): Transaction[] {
 
 export function loadStoredTransactions(): Transaction[] {
   try {
+    if (localStorage.getItem('numi_finance_cleared') === 'true') {
+      const raw = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+      if (raw) {
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    }
+
     const raw = getStoredItem('TRANSACTIONS');
     if (!raw) {
       const seeded = generateSeedTransactions();
@@ -238,6 +250,9 @@ export function loadStoredTransactions(): Transaction[] {
       return seeded;
     }
     const parsed: Transaction[] = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return [];
+    }
     const today = getOffsetDate(0);
     // If stored transactions are from old seed with small dollar amounts or outdated seed dates, refresh seed data
     const hasCurrentDates = parsed.some(
@@ -258,8 +273,23 @@ export function loadStoredTransactions(): Transaction[] {
 export function saveTransactions(transactions: Transaction[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
+    if (transactions.length === 0) {
+      localStorage.setItem('numi_finance_cleared', 'true');
+    } else {
+      localStorage.removeItem('numi_finance_cleared');
+    }
   } catch (err) {
     console.error('Failed to save transactions:', err);
+  }
+}
+
+export function clearAllTransactionsAndData(): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify([]));
+    localStorage.removeItem(LEGACY_STORAGE_KEYS.TRANSACTIONS);
+    localStorage.setItem('numi_finance_cleared', 'true');
+  } catch (err) {
+    console.error('Failed to clear all transactions and data:', err);
   }
 }
 

@@ -9,6 +9,8 @@ import {
   Upload,
   RotateCcw,
   Check,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
 import { NumiLogo } from './NumiLogo';
@@ -22,7 +24,8 @@ interface SettingsModalProps {
   onUpdateBudget: (b: BudgetConfig) => void;
   transactions: Transaction[];
   tags: CustomTag[];
-  onResetData: () => void;
+  onDeleteAllData: () => void;
+  onLoadDemoData?: () => void;
   onImportData: (data: { transactions: Transaction[]; tags: CustomTag[] }) => void;
 }
 
@@ -35,13 +38,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onUpdateBudget,
   transactions,
   tags,
-  onResetData,
+  onDeleteAllData,
+  onLoadDemoData,
   onImportData,
 }) => {
   const { tap, success, warning } = useHaptics();
   const [budgetInput, setBudgetInput] = useState(budget.monthlyLimit.toString());
   const [savedBudgetNotice, setSavedBudgetNotice] = useState(false);
-  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
   const [importNotice, setImportNotice] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -301,32 +305,59 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
               </label>
 
+              {/* Danger Zone: Delete & Reset All Data Button */}
               <button
                 type="button"
                 onClick={() => {
                   warning();
-                  if (isConfirmingReset) {
-                    onResetData();
-                    onClose();
-                  } else {
-                    setIsConfirmingReset(true);
-                  }
+                  setShowWarningModal(true);
                 }}
-                className={`w-full px-4 py-3.5 flex items-center justify-between text-left transition-colors cursor-pointer active:scale-95 ${
-                  isConfirmingReset ? 'bg-[#FF3B30]/10' : 'hover:bg-[#FF3B30]/5'
-                }`}
+                className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-[#FF3B30]/5 transition-colors cursor-pointer active:scale-95 group"
               >
-                <div className="flex items-center gap-3 text-[#FF3B30]">
-                  <div className="w-7 h-7 rounded-lg bg-[#FF3B30]/15 text-[#FF3B30] flex items-center justify-center">
-                    <RotateCcw size={15} />
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[#FF3B30]/15 text-[#FF3B30] flex items-center justify-center transition-transform group-hover:scale-105">
+                    <Trash2 size={15} />
                   </div>
-                  <span className="text-sm font-medium">
-                    {isConfirmingReset
-                      ? 'Tap Again to Confirm Reset (₹ INR)'
-                      : 'Reset to Demo Data (₹ INR)'}
-                  </span>
+                  <div>
+                    <span className="text-sm font-medium text-[#FF3B30] block">
+                      Delete & Erase All Transactions
+                    </span>
+                    <span className="text-[11px] text-[#86868B]">
+                      Reset balances to zero and permanently clear data
+                    </span>
+                  </div>
                 </div>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20">
+                  Zero Out
+                </span>
               </button>
+
+              {/* Optional: Restore Sample Demo Transactions */}
+              {onLoadDemoData && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    tap('medium');
+                    onLoadDemoData();
+                    onClose();
+                  }}
+                  className="w-full px-4 py-2.5 flex items-center justify-between text-left hover:bg-black/[0.03] transition-colors cursor-pointer border-t border-black/[0.04]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-black/[0.05] text-[#636366] flex items-center justify-center">
+                      <RotateCcw size={14} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-medium text-[#636366] block">
+                        Load Sample Demo Data
+                      </span>
+                      <span className="text-[10px] text-[#8E8E93]">
+                        Populate starter expenses for testing
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 
@@ -350,6 +381,96 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Warning Pop-up Window Modal */}
+      {showWarningModal && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="warning-popup-title"
+          aria-describedby="warning-popup-desc"
+        >
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-black/[0.08] text-center space-y-4 animate-in zoom-in-95 duration-200">
+            {/* Warning Shield & Alert Icon */}
+            <div className="relative mx-auto w-16 h-16 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[#FF3B30]/15 animate-ping opacity-75" />
+              <div className="relative w-14 h-14 rounded-full bg-[#FF3B30]/15 border-2 border-[#FF3B30]/30 text-[#FF3B30] flex items-center justify-center shadow-inner">
+                <AlertTriangle size={28} strokeWidth={2.2} />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <h3
+                id="warning-popup-title"
+                className="text-lg font-bold text-[#1D1D1F] tracking-tight"
+              >
+                Delete All Transactions?
+              </h3>
+              <p
+                id="warning-popup-desc"
+                className="text-xs sm:text-sm text-[#48484A] leading-relaxed"
+              >
+                Warning: By confirming this window, you will delete all{' '}
+                <span className="font-semibold text-[#1D1D1F]">
+                  {transactions.length} transaction(s)
+                </span>{' '}
+                and make everything erased. All figures and financial metrics will be set completely to zero (0).
+              </p>
+            </div>
+
+            {/* Impact Details Box */}
+            <div className="p-3.5 bg-[#FF3B30]/5 rounded-2xl border border-[#FF3B30]/15 text-left space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[#86868B]">Transactions:</span>
+                <span className="font-bold text-[#FF3B30]">
+                  {transactions.length} → 0 records
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#86868B]">Balances & Spend:</span>
+                <span className="font-bold text-[#1D1D1F]">Reset to 0.00</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#86868B]">Data Persistence:</span>
+                <span className="font-bold text-[#D70015]">Permanently Deleted</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] font-medium text-[#8E8E93] italic">
+              This action cannot be undone. Your transactions will remain deleted.
+            </p>
+
+            {/* Warning Window Action Buttons */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  warning();
+                  onDeleteAllData();
+                  setShowWarningModal(false);
+                  onClose();
+                }}
+                className="w-full py-3 px-4 rounded-2xl bg-[#FF3B30] hover:bg-[#E0261C] active:bg-[#C91F16] text-white font-semibold text-sm shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Trash2 size={16} />
+                <span>Delete Everything & Reset to Zero</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  setShowWarningModal(false);
+                }}
+                className="w-full py-2.5 px-4 rounded-2xl bg-[#E5E5EA] hover:bg-[#D8D8DC] text-[#1D1D1F] font-semibold text-sm transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Cancel & Keep My Data
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
