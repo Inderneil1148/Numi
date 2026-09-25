@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", "Helvetica Neue", sans-serif;
+    touch-action: manipulation;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #F2F2F7;
+    color: #1D1D1F;
+    letter-spacing: -0.015em;
+  }
+
+  /* Monospace numbers with tabular figures for currency alignment */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Apple squircle smoothing */
+  .squircle {
+    corner-smoothing: 60%;
+  }
+}
+
+/* Hide scrollbar for seamless Apple touch feel */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle Apple specular glass reflections */
+.apple-card-sheen {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(245,245,247,0.85) 100%);
+}

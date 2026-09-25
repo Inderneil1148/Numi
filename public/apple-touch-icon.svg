@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="apple-bg-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181A20" />
+      <stop offset="100%" stop-color="#08090B" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="116" fill="url(#apple-bg-grad)" />
+
+  <g transform="translate(68, 178) scale(1.58)">
+    <line x1="12" y1="14" x2="208" y2="14" stroke="#9EE42A" stroke-width="5" stroke-linecap="round" />
+    <circle cx="208" cy="14" r="8.5" fill="#9EE42A" />
+
+    <path d="M12,26 h12 v4.8 c2.8-3.8 7.2-6 12.8-6 c9.6,0 16.4,6.4 16.4,17.2 V68 H41.6 V45.2 c0-4.8-3-7.6-7.4-7.6 c-4.6,0-7.8,3-7.8,7.6 V68 H12 Z" fill="#FFFFFF" />
+    <path d="M62,26 h11.6 v23 c0,4.8 3.2,7.6 7.8,7.6 c4.4,0 7.4-2.8 7.4-7.6 V26 H100.4 V68 H88.8 v-4.8 c-2.8,3.8-7.2,6-12.8,6 c-9.6,0-16.4-6.4-16.4-17.2 V26 Z" fill="#FFFFFF" />
+    <path d="M110,26 h11.6 v4.8 c2.6-3.8 6.8-6 12.2-6 c6.2,0 10.8,3 13.2,8 c2.8-5 7.6-8 13.8-8 c9,0 15.6,6.4 15.6,17.2 V68 H164.8 V45.2 c0-4.8-2.8-7.6-7-7.6 c-4.2,0-7.2,3-7.2,7.6 V68 H139 V45.2 c0-4.8-2.8-7.6-7-7.6 c-4.2,0-7.2,3-7.2,7.6 V68 H110 Z" fill="#FFFFFF" />
+    <rect x="202" y="26" width="12" height="42" rx="1.2" fill="#FFFFFF" />
+  </g>
+</svg>

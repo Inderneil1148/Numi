@@ -1,0 +1,6 @@
+{
+  "name": "Numi - Minimal Expense & Tag Tracker",
+  "description": "A minimal, mobile-first personal finance tracker with custom tagging, visual clarity, and precise budget insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
