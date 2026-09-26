@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="h-full bg-[#F2F2F7]">
+<html lang="en" class="h-full bg-[#F2F2F7] dark:bg-black">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -11,6 +11,20 @@
     <meta name="theme-color" content="#F2F2F7" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('numi_finance_theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (stored === 'dark' || ((!stored || stored === 'system') && prefersDark)) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#000000');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta property="og:title" content="Numi - Minimal Expense & Tag Tracker" />
     <meta property="og:description" content="A minimal, mobile-first personal finance tracker with custom tagging, visual clarity, and precise budget insights." />
     <meta property="og:type" content="website" />
@@ -19,7 +33,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
-  <body class="h-full bg-[#F2F2F7] text-[#1D1D1F] antialiased selection:bg-[#007AFF]/20 selection:text-[#007AFF]">
+  <body class="h-full bg-[#F2F2F7] text-[#1D1D1F] dark:bg-black dark:text-[#F5F5F7] antialiased selection:bg-[#007AFF]/20 selection:text-[#007AFF] dark:selection:bg-[#0A84FF]/30 dark:selection:text-[#0A84FF]">
     <div id="root" class="h-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

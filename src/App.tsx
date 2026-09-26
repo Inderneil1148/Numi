@@ -16,11 +16,11 @@ import {
   saveStoredCurrency,
   loadStoredBudget,
   saveStoredBudget,
-  generateSeedTransactions,
   clearAllTransactionsAndData,
 } from './utils/storage';
 import { DEFAULT_CATEGORIES, DEFAULT_TAGS, TAG_COLOR_PALETTE } from './utils/constants';
 import { useHaptics } from './hooks/useHaptics';
+import { useTheme } from './hooks/useTheme';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { OverviewCard } from './components/OverviewCard';
@@ -34,6 +34,7 @@ import { DownloadBanner } from './components/DownloadBanner';
 
 export default function App() {
   const { tap, success, warning } = useHaptics();
+  const { theme, setTheme } = useTheme();
 
   // Core Data States
   const [transactions, setTransactions] = useState<Transaction[]>(loadStoredTransactions);
@@ -247,20 +248,6 @@ export default function App() {
     }, 4000);
   };
 
-  const handleLoadDemoData = () => {
-    success();
-    const seeded = generateSeedTransactions();
-    setTransactions(seeded);
-    saveTransactions(seeded);
-    setTags(DEFAULT_TAGS);
-    saveStoredTags(DEFAULT_TAGS);
-    localStorage.removeItem('numi_finance_cleared');
-    setToastMessage('✓ Sample demo transactions loaded.');
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-  };
-
   const handleImportData = (data: { transactions: Transaction[]; tags: CustomTag[] }) => {
     success();
     setTransactions(data.transactions);
@@ -278,7 +265,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] text-[#1D1D1F] flex flex-col">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col transition-colors">
       {/* Top Download Smart Banner */}
       {showDownloadBanner && (
         <DownloadBanner
@@ -426,15 +413,16 @@ export default function App() {
           transactions={transactions}
           tags={tags}
           onDeleteAllData={handleDeleteAllData}
-          onLoadDemoData={handleLoadDemoData}
           onImportData={handleImportData}
           showDownloadBanner={showDownloadBanner}
           onToggleDownloadBanner={handleToggleDownloadBanner}
+          theme={theme}
+          onUpdateTheme={setTheme}
         />
 
         {/* Global Toast Notification */}
         {toastMessage && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-[#1D1D1F] text-white text-xs font-semibold rounded-full shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-[#1D1D1F] dark:bg-[#2C2C2E] text-white text-xs font-semibold rounded-full shadow-xl border border-transparent dark:border-white/10 flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200">
             <span>{toastMessage}</span>
           </div>
         )}

@@ -37,8 +37,8 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
         onClick={() => handleTagClick(null)}
         className={`px-3.5 py-1.5 text-xs font-semibold rounded-full shrink-0 transition-all min-h-[32px] flex items-center gap-1.5 active:scale-95 cursor-pointer ${
           selectedTag === null
-            ? 'bg-[#0B57D0] text-white shadow-xs'
-            : 'bg-white text-[#444746] border border-[#C4C7C5] hover:bg-[#F0F4F9]'
+            ? 'bg-[#007AFF] text-white shadow-xs dark:bg-[#0A84FF]'
+            : 'bg-white text-[#444746] border border-[#C4C7C5] hover:bg-[#F0F4F9] dark:bg-[#1C1C1E] dark:text-[#8E8E93] dark:border-white/[0.1] dark:hover:bg-[#2C2C2E] dark:hover:text-white'
         }`}
       >
         <span>All</span>
@@ -55,19 +55,19 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
             onClick={() => handleTagClick(isSelected ? null : tag.name)}
             className={`px-3 py-1.5 text-xs font-medium rounded-full shrink-0 transition-all min-h-[32px] flex items-center gap-1.5 active:scale-95 cursor-pointer ${
               isSelected
-                ? 'bg-[#041E49] text-white shadow-xs font-semibold'
-                : 'bg-white text-[#1F1F1F] border border-[#C4C7C5] hover:bg-[#F0F4F9]'
+                ? 'bg-[#1D1D1F] text-white shadow-xs font-semibold dark:bg-white dark:text-black'
+                : 'bg-white text-[#1F1F1F] border border-[#C4C7C5] hover:bg-[#F0F4F9] dark:bg-[#1C1C1E] dark:text-[#F5F5F7] dark:border-white/[0.1] dark:hover:bg-[#2C2C2E]'
             }`}
           >
             <span
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: isSelected ? '#FFFFFF' : tag.color }}
+              style={{ backgroundColor: isSelected ? (undefined) : tag.color }}
             />
             <span className="tracking-tight">#{tag.name}</span>
             {count > 0 && (
               <span
                 className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-white/20 text-white' : 'bg-[#E0E2EC] text-[#444746]'
+                  isSelected ? 'bg-white/20 text-white dark:bg-black/20 dark:text-black' : 'bg-[#E0E2EC] text-[#444746] dark:bg-[#2C2C2E] dark:text-[#8E8E93]'
                 }`}
               >
                 {count}
@@ -81,7 +81,7 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
       <button
         type="button"
         onClick={handleManageClick}
-        className="px-3 py-1.5 text-xs font-semibold text-[#0B57D0] bg-white hover:bg-[#E8F0FE] border border-[#0B57D0]/40 rounded-full shrink-0 transition-colors min-h-[32px] flex items-center gap-1 active:scale-95 cursor-pointer"
+        className="px-3 py-1.5 text-xs font-semibold text-[#007AFF] dark:text-[#0A84FF] bg-white hover:bg-[#E8F0FE] dark:bg-[#1C1C1E] dark:hover:bg-[#2C2C2E] border border-[#007AFF]/40 dark:border-[#0A84FF]/40 rounded-full shrink-0 transition-colors min-h-[32px] flex items-center gap-1 active:scale-95 cursor-pointer"
         title="Manage Custom Tags"
       >
         <Plus size={13} strokeWidth={2.5} />

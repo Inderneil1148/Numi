@@ -17,15 +17,8 @@ export const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 export const DEFAULT_TAGS: CustomTag[] = [
-  { id: 'tag-coffee', name: 'coffee', color: '#FF9500', createdAt: 1710000000000 },
-  { id: 'tag-dining-out', name: 'dining-out', color: '#FF2D55', createdAt: 1710000001000 },
-  { id: 'tag-groceries', name: 'groceries', color: '#34C759', createdAt: 1710000002000 },
-  { id: 'tag-commute', name: 'commute', color: '#007AFF', createdAt: 1710000003000 },
-  { id: 'tag-subscription', name: 'subscription', color: '#AF52DE', createdAt: 1710000004000 },
-  { id: 'tag-tax-deductible', name: 'tax-deductible', color: '#5856D6', createdAt: 1710000005000 },
-  { id: 'tag-fitness', name: 'fitness', color: '#FF3B30', createdAt: 1710000006000 },
-  { id: 'tag-travel', name: 'travel', color: '#00C7BE', createdAt: 1710000007000 },
-  { id: 'tag-work', name: 'work', color: '#8E8E93', createdAt: 1710000008000 },
+  { id: 'tag-travel', name: 'travel', color: '#00C7BE', createdAt: 1710000000000 },
+  { id: 'tag-work', name: 'work', color: '#8E8E93', createdAt: 1710000001000 },
 ];
 
 export const TAG_COLOR_PALETTE = [

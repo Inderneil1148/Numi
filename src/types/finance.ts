@@ -43,3 +43,5 @@ export interface CurrencyConfig {
 export type TimeFilter = 'this-month' | 'last-month' | 'last-30-days' | 'all-time' | 'custom';
 
 export type ActiveTab = 'ledger' | 'tags' | 'analytics' | 'settings';
+
+export type ThemeMode = 'system' | 'light' | 'dark';

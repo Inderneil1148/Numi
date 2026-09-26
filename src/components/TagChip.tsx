@@ -31,8 +31,8 @@ export const TagChip: React.FC<TagChipProps> = ({
   }`;
 
   const styleClasses = isSelected
-    ? 'bg-[#1D1D1F] text-white shadow-xs'
-    : 'bg-[#E5E5EA]/80 text-[#1D1D1F] hover:bg-[#D1D1D6]';
+    ? 'bg-[#1D1D1F] text-white shadow-xs dark:bg-white dark:text-black'
+    : 'bg-[#E5E5EA]/80 text-[#1D1D1F] hover:bg-[#D1D1D6] dark:bg-[#2C2C2E] dark:text-[#F5F5F7] dark:hover:bg-[#3A3A3C]';
 
   return (
     <span

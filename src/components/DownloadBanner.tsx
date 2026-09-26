@@ -151,11 +151,11 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
       {/* Installation Guide Modal (iPhone, Android, Desktop) */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/65 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-black/[0.08] space-y-4 animate-in zoom-in-95 duration-200 relative">
+          <div className="w-full max-w-md bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 shadow-2xl border border-black/[0.08] dark:border-white/[0.08] space-y-4 animate-in zoom-in-95 duration-200 relative text-[#1D1D1F] dark:text-[#F5F5F7]">
             {/* Close Button */}
             <button
               type="button"
@@ -163,7 +163,7 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                 tap('light');
                 setIsModalOpen(false);
               }}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.08] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center transition-colors cursor-pointer"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/10 dark:hover:bg-white/15 text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
               aria-label="Close"
             >
               <X size={16} />
@@ -175,10 +175,10 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                 <CoinIcon size={34} />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-[#1D1D1F] tracking-tight">
+                <h3 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-white tracking-tight">
                   How to Install Numi
                 </h3>
-                <p className="text-xs text-[#86868B]">
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
                   Add to home screen for instant offline access
                 </p>
               </div>
@@ -197,7 +197,7 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
             )}
 
             {/* Platform Selection Tabs: iPhone | Android | Desktop */}
-            <div className="p-1 bg-[#E5E5EA] rounded-2xl flex items-center text-xs font-semibold">
+            <div className="p-1 bg-[#E5E5EA] dark:bg-[#2C2C2E] rounded-2xl flex items-center text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => {
@@ -206,8 +206,8 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                 }}
                 className={`flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'ios'
-                    ? 'bg-white text-[#1D1D1F] shadow-xs'
-                    : 'text-[#8E8E93] hover:text-[#1D1D1F]'
+                    ? 'bg-white text-[#1D1D1F] shadow-xs dark:bg-[#3A3A3C] dark:text-white'
+                    : 'text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white'
                 }`}
               >
                 <Apple size={14} />
@@ -222,8 +222,8 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                 }}
                 className={`flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'android'
-                    ? 'bg-white text-[#1D1D1F] shadow-xs'
-                    : 'text-[#8E8E93] hover:text-[#1D1D1F]'
+                    ? 'bg-white text-[#1D1D1F] shadow-xs dark:bg-[#3A3A3C] dark:text-white'
+                    : 'text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white'
                 }`}
               >
                 <Smartphone size={14} />
@@ -238,8 +238,8 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                 }}
                 className={`flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'desktop'
-                    ? 'bg-white text-[#1D1D1F] shadow-xs'
-                    : 'text-[#8E8E93] hover:text-[#1D1D1F]'
+                    ? 'bg-white text-[#1D1D1F] shadow-xs dark:bg-[#3A3A3C] dark:text-white'
+                    : 'text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white'
                 }`}
               >
                 <Monitor size={14} />
@@ -248,31 +248,31 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
             </div>
 
             {/* Step-by-Step Instructions Container */}
-            <div className="p-4 bg-[#F2F2F7] rounded-2xl border border-black/[0.05] min-h-[140px] flex flex-col justify-center">
+            <div className="p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E]/60 rounded-2xl border border-black/[0.05] dark:border-white/[0.06] min-h-[140px] flex flex-col justify-center">
               {/* iPhone / iOS Guide */}
               {activeTab === 'ios' && (
-                <div className="space-y-3 text-xs text-[#1D1D1F]">
-                  <div className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider">
+                <div className="space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <div className="text-[11px] font-bold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider">
                     Install on iPhone / iPad (Safari)
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#007AFF] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#007AFF] dark:text-[#0A84FF] shadow-xs shrink-0 mt-0.5">
                       1
                     </span>
                     <span className="leading-snug">
-                      Tap the <Share size={13} className="inline text-[#007AFF] mx-0.5" /> <strong>Share</strong> button at the bottom of Safari.
+                      Tap the <Share size={13} className="inline text-[#007AFF] dark:text-[#0A84FF] mx-0.5" /> <strong>Share</strong> button at the bottom of Safari.
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#007AFF] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#007AFF] dark:text-[#0A84FF] shadow-xs shrink-0 mt-0.5">
                       2
                     </span>
                     <span className="leading-snug">
-                      Scroll down and tap <PlusSquare size={13} className="inline text-[#1D1D1F] mx-0.5" /> <strong>Add to Home Screen</strong>.
+                      Scroll down and tap <PlusSquare size={13} className="inline text-[#1D1D1F] dark:text-white mx-0.5" /> <strong>Add to Home Screen</strong>.
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#007AFF] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#007AFF] dark:text-[#0A84FF] shadow-xs shrink-0 mt-0.5">
                       3
                     </span>
                     <span className="leading-snug">
@@ -284,12 +284,12 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
 
               {/* Android Guide */}
               {activeTab === 'android' && (
-                <div className="space-y-3 text-xs text-[#1D1D1F]">
-                  <div className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider">
+                <div className="space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <div className="text-[11px] font-bold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider">
                     Install on Android (Chrome / Browser)
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#34C759] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#34C759] dark:text-[#30D158] shadow-xs shrink-0 mt-0.5">
                       1
                     </span>
                     <span className="leading-snug">
@@ -297,15 +297,15 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#34C759] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#34C759] dark:text-[#30D158] shadow-xs shrink-0 mt-0.5">
                       2
                     </span>
                     <span className="leading-snug">
-                      Select <Smartphone size={13} className="inline text-[#34C759] mx-0.5" /> <strong>Install app</strong> or <strong>Add to Home screen</strong>.
+                      Select <Smartphone size={13} className="inline text-[#34C759] dark:text-[#30D158] mx-0.5" /> <strong>Install app</strong> or <strong>Add to Home screen</strong>.
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#34C759] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#34C759] dark:text-[#30D158] shadow-xs shrink-0 mt-0.5">
                       3
                     </span>
                     <span className="leading-snug">
@@ -317,12 +317,12 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
 
               {/* Desktop Guide */}
               {activeTab === 'desktop' && (
-                <div className="space-y-3 text-xs text-[#1D1D1F]">
-                  <div className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider">
+                <div className="space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <div className="text-[11px] font-bold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider">
                     Install on Desktop (Chrome, Edge, Safari)
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#007AFF] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#007AFF] dark:text-[#0A84FF] shadow-xs shrink-0 mt-0.5">
                       1
                     </span>
                     <span className="leading-snug">
@@ -330,7 +330,7 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-white font-bold flex items-center justify-center text-[11px] text-[#007AFF] shadow-xs shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-white dark:bg-[#3A3A3C] font-bold flex items-center justify-center text-[11px] text-[#007AFF] dark:text-[#0A84FF] shadow-xs shrink-0 mt-0.5">
                       2
                     </span>
                     <span className="leading-snug">
@@ -348,7 +348,7 @@ export const DownloadBanner: React.FC<DownloadBannerProps> = ({ onDismiss }) => 
                 tap('light');
                 setIsModalOpen(false);
               }}
-              className="w-full py-2.5 rounded-2xl bg-[#E5E5EA] hover:bg-[#D8D8DC] text-[#1D1D1F] font-semibold text-xs transition-colors cursor-pointer"
+              className="w-full py-2.5 rounded-2xl bg-[#E5E5EA] hover:bg-[#D8D8DC] dark:bg-[#2C2C2E] dark:hover:bg-[#3A3A3C] text-[#1D1D1F] dark:text-white font-semibold text-xs transition-colors cursor-pointer"
             >
               Done
             </button>

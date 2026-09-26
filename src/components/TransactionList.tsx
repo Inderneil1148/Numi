@@ -133,20 +133,20 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <Search
               size={16}
               strokeWidth={2.2}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#747775] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#747775] dark:text-[#8E8E93] pointer-events-none"
             />
             <input
               type="text"
               placeholder="Search title, note, category or #tag..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-sm bg-white text-[#1F1F1F] rounded-xl border border-[#C4C7C5] placeholder:text-[#747775] font-normal focus:outline-none focus:border-[#0B57D0] focus:ring-1 focus:ring-[#0B57D0] transition-all min-h-[38px] shadow-2xs"
+              className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-[#1C1C1E] text-[#1F1F1F] dark:text-white rounded-xl border border-[#C4C7C5] dark:border-white/[0.1] placeholder:text-[#747775] dark:placeholder:text-[#636366] font-normal focus:outline-none focus:border-[#0B57D0] dark:focus:border-[#0A84FF] focus:ring-1 focus:ring-[#0B57D0] dark:focus:ring-[#0A84FF] transition-all min-h-[38px] shadow-2xs"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => onSearchChange('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#747775] text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#747775] dark:bg-[#636366] text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
                 aria-label="Clear search"
               >
                 <X size={12} strokeWidth={2.5} />
@@ -155,14 +155,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           </div>
 
           {/* Material 3 Segmented Pill Control */}
-          <div className="flex p-1 bg-[#E0E2EC]/70 rounded-full sm:w-72 shrink-0">
+          <div className="flex p-1 bg-[#E0E2EC]/70 dark:bg-[#1C1C1E] dark:border dark:border-white/[0.06] rounded-full sm:w-72 shrink-0">
             <button
               type="button"
               onClick={() => handleTypeClick('all')}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all min-h-[30px] cursor-pointer ${
                 typeFilter === 'all'
-                  ? 'bg-white text-[#041E49] shadow-xs font-bold'
-                  : 'text-[#444746] hover:text-[#1F1F1F]'
+                  ? 'bg-white text-[#041E49] shadow-xs font-bold dark:bg-[#2C2C2E] dark:text-white dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)]'
+                  : 'text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white'
               }`}
             >
               All
@@ -172,8 +172,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               onClick={() => handleTypeClick('expense')}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all min-h-[30px] cursor-pointer ${
                 typeFilter === 'expense'
-                  ? 'bg-white text-[#B3261E] shadow-xs font-bold'
-                  : 'text-[#444746] hover:text-[#1F1F1F]'
+                  ? 'bg-white text-[#B3261E] shadow-xs font-bold dark:bg-[#2C2C2E] dark:text-[#FF453A] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)]'
+                  : 'text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white'
               }`}
             >
               Expenses
@@ -183,8 +183,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               onClick={() => handleTypeClick('income')}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all min-h-[30px] cursor-pointer ${
                 typeFilter === 'income'
-                  ? 'bg-white text-[#146C2E] shadow-xs font-bold'
-                  : 'text-[#444746] hover:text-[#1F1F1F]'
+                  ? 'bg-white text-[#146C2E] shadow-xs font-bold dark:bg-[#2C2C2E] dark:text-[#30D158] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)]'
+                  : 'text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white'
               }`}
             >
               Income
@@ -194,7 +194,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
         {/* Active Tag Filter Indicator */}
         {selectedTag && (
-          <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#D3E3FD] text-[#041E49] rounded-xl text-xs font-medium">
+          <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#D3E3FD] dark:bg-[#0A84FF]/20 text-[#041E49] dark:text-[#64D2FF] rounded-xl text-xs font-medium">
             <div className="flex items-center gap-1.5">
               <span className="opacity-80">Filter:</span>
               <span className="font-bold">#{selectedTag}</span>
@@ -202,7 +202,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <button
               type="button"
               onClick={() => onSelectTag(null)}
-              className="text-[#0B57D0] hover:opacity-70 flex items-center gap-0.5 font-bold text-[11px] cursor-pointer"
+              className="text-[#0B57D0] dark:text-[#64D2FF] hover:opacity-70 flex items-center gap-0.5 font-bold text-[11px] cursor-pointer"
             >
               <X size={12} strokeWidth={2.5} />
               <span>Clear</span>
@@ -212,7 +212,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       </div>
 
       {/* Feed Status Summary */}
-      <div className="flex items-center justify-between px-2 text-[11px] text-[#444746] font-medium tracking-tight">
+      <div className="flex items-center justify-between px-2 text-[11px] text-[#444746] dark:text-[#8E8E93] font-medium tracking-tight">
         <span>
           {timeFilter === 'this-month'
             ? 'This Month'
@@ -222,7 +222,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           • {filteredTransactions.length} {filteredTransactions.length === 1 ? 'record' : 'records'}
         </span>
         {filteredTransactions.length > 0 && (
-          <span className="text-[10px] uppercase tracking-wider text-[#747775]">
+          <span className="text-[10px] uppercase tracking-wider text-[#747775] dark:text-[#636366]">
             Grouped by date
           </span>
         )}
@@ -230,15 +230,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
       {/* Material Design 3 Grouped Inset Feed */}
       {groupedByDate.length === 0 ? (
-        <div className="p-8 text-center bg-white rounded-2xl border border-[#E0E2EC] shadow-xs space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-full bg-[#F0F4F9] flex items-center justify-center text-[#747775]">
+        <div className="p-8 text-center bg-white dark:bg-[#1C1C1E] rounded-2xl border border-[#E0E2EC] dark:border-white/[0.08] shadow-xs space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-full bg-[#F0F4F9] dark:bg-[#2C2C2E] flex items-center justify-center text-[#747775] dark:text-[#8E8E93]">
             <Search size={22} strokeWidth={2} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-[#1F1F1F]">
+            <h3 className="text-sm font-semibold text-[#1F1F1F] dark:text-white">
               No Transactions Found
             </h3>
-            <p className="text-xs text-[#444746] max-w-xs mx-auto">
+            <p className="text-xs text-[#444746] dark:text-[#8E8E93] max-w-xs mx-auto">
               {searchQuery || selectedTag || typeFilter !== 'all'
                 ? 'Try resetting your search query or tag filter.'
                 : 'No transactions logged yet. Tap the button below to get started.'}
@@ -252,7 +252,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 onSelectTag(null);
                 onTypeFilterChange('all');
               }}
-              className="px-4 py-2 text-xs font-semibold text-[#0B57D0] bg-[#D3E3FD] rounded-full hover:bg-[#D3E3FD]/80 transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-[#0B57D0] dark:text-[#64D2FF] bg-[#D3E3FD] dark:bg-[#0A84FF]/20 rounded-full hover:bg-[#D3E3FD]/80 dark:hover:bg-[#0A84FF]/30 transition-colors cursor-pointer"
             >
               Reset Filters
             </button>
@@ -260,7 +260,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <button
               type="button"
               onClick={handleAddClick}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#0B57D0] rounded-full hover:bg-[#1A73E8] transition-colors shadow-xs active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#0B57D0] dark:bg-[#0A84FF] rounded-full hover:bg-[#1A73E8] dark:hover:bg-[#0071E3] transition-colors shadow-xs active:scale-95 cursor-pointer"
             >
               <Plus size={14} strokeWidth={2.5} />
               <span>Add Transaction</span>
@@ -272,15 +272,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           {groupedByDate.map((group) => (
             <div key={group.date} className="space-y-1.5">
               {/* Material Design 3 Section Header */}
-              <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#444746] tracking-tight uppercase">
+              <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#444746] dark:text-[#8E8E93] tracking-tight uppercase">
                 <span>{formatDateLabel(group.date)}</span>
                 <span className="tabular-nums font-medium text-[11px] normal-case">
                   {group.netTotal < 0 ? (
-                    <span className="text-[#444746]">
+                    <span className="text-[#444746] dark:text-[#8E8E93]">
                       -{formatCurrency(Math.abs(group.netTotal), currency, { signDisplay: 'never' })}
                     </span>
                   ) : group.netTotal > 0 ? (
-                    <span className="text-[#146C2E] font-semibold">
+                    <span className="text-[#146C2E] dark:text-[#30D158] font-semibold">
                       +{formatCurrency(group.netTotal, currency, { signDisplay: 'never' })}
                     </span>
                   ) : (
@@ -290,7 +290,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               </div>
 
               {/* Inset Grouped Table Cell List */}
-              <div className="bg-white rounded-2xl border border-[#E0E2EC] shadow-xs divide-y divide-[#E0E2EC] overflow-hidden">
+              <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-[#E0E2EC] dark:border-white/[0.08] shadow-xs divide-y divide-[#E0E2EC] dark:divide-white/[0.06] overflow-hidden">
                 {group.items.map((tx) => {
                   const cat = categoryMap.get(tx.category);
                   const isExpense = tx.type === 'expense';
@@ -300,7 +300,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     <div
                       key={tx.id}
                       onClick={() => handleTxClick(tx)}
-                      className="group flex items-center gap-3 px-3.5 py-3 hover:bg-[#F0F4F9] active:bg-[#E0E2EC]/70 transition-colors cursor-pointer min-h-[58px]"
+                      className="group flex items-center gap-3 px-3.5 py-3 hover:bg-[#F0F4F9] dark:hover:bg-[#2C2C2E]/60 active:bg-[#E0E2EC]/70 dark:active:bg-[#2C2C2E] transition-colors cursor-pointer min-h-[58px]"
                     >
                       {/* Squircle Glyph Badge */}
                       <div
@@ -320,12 +320,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       {/* Middle: Title, Category & Custom Tags */}
                       <div className="flex-1 min-w-0 pr-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-[#1F1F1F] truncate tracking-tight">
+                          <p className="text-sm font-semibold text-[#1F1F1F] dark:text-white truncate tracking-tight">
                             {tx.title}
                           </p>
                           {tx.note && (
                             <span
-                              className="hidden md:inline-block text-xs text-[#747775] truncate max-w-[200px] lg:max-w-[280px]"
+                              className="hidden md:inline-block text-xs text-[#747775] dark:text-[#8E8E93] truncate max-w-[200px] lg:max-w-[280px]"
                               title={tx.note}
                             >
                               · {tx.note}
@@ -334,14 +334,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                         </div>
 
                         {/* Category & Tags Row */}
-                        <div className="flex items-center gap-1.5 text-xs text-[#444746] mt-0.5 min-w-0 overflow-hidden">
-                          <span className="truncate max-w-[85px] sm:max-w-[120px] text-[11px] font-medium text-[#444746] shrink-0">
+                        <div className="flex items-center gap-1.5 text-xs text-[#444746] dark:text-[#8E8E93] mt-0.5 min-w-0 overflow-hidden">
+                          <span className="truncate max-w-[85px] sm:max-w-[120px] text-[11px] font-medium text-[#444746] dark:text-[#8E8E93] shrink-0">
                             {tx.category}
                           </span>
 
                           {tx.customTags && tx.customTags.length > 0 && (
                             <>
-                              <span className="text-[#C4C7C5] text-[10px] shrink-0" aria-hidden="true">
+                              <span className="text-[#C4C7C5] dark:text-[#48484A] text-[10px] shrink-0" aria-hidden="true">
                                 ·
                               </span>
                               <div className="flex items-center gap-1 min-w-0 overflow-hidden">
@@ -359,7 +359,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                                 })}
                                 {tx.customTags.length > 2 && (
                                   <span
-                                    className="text-[10px] font-bold text-[#444746] bg-[#E0E2EC] px-1.5 py-0.5 rounded-full shrink-0"
+                                    className="text-[10px] font-bold text-[#444746] dark:text-[#8E8E93] bg-[#E0E2EC] dark:bg-[#2C2C2E] px-1.5 py-0.5 rounded-full shrink-0"
                                     title={tx.customTags.slice(2).map((t) => `#${t}`).join(', ')}
                                   >
                                     +{tx.customTags.length - 2}
@@ -376,19 +376,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                         <div>
                           <div
                             className={`text-sm font-semibold tabular-nums tracking-tight whitespace-nowrap ${
-                              isExpense ? 'text-[#1F1F1F]' : 'text-[#146C2E]'
+                              isExpense ? 'text-[#1F1F1F] dark:text-white' : 'text-[#146C2E] dark:text-[#30D158]'
                             }`}
                           >
                             {isExpense ? '-' : '+'}
                             {formatCurrency(tx.amount, currency, { signDisplay: 'never' })}
                           </div>
                           {tx.time && (
-                            <div className="text-[10px] text-[#747775] tabular-nums mt-0.5">
+                            <div className="text-[10px] text-[#747775] dark:text-[#8E8E93] tabular-nums mt-0.5">
                               {tx.time}
                             </div>
                           )}
                         </div>
-                        <ChevronRight size={14} className="text-[#C4C7C5] shrink-0" />
+                        <ChevronRight size={14} className="text-[#C4C7C5] dark:text-[#48484A] shrink-0" />
                       </div>
                     </div>
                   );

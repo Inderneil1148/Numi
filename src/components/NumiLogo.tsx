@@ -5,8 +5,9 @@ export interface NumiLogoProps {
    * 'icon': Squircle app icon tile with coin or typography mark
    * 'typography': Vector typography mark only (adaptive or colored)
    * 'brand': App icon squircle paired with typography and optional subtitle
+   * 'badge': Compact squircle icon badge
    */
-  variant?: 'icon' | 'typography' | 'brand';
+  variant?: 'icon' | 'typography' | 'brand' | 'badge';
   iconType?: 'coin' | 'typography';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
   textColor?: string;
@@ -189,8 +190,8 @@ export const NumiLogo: React.FC<NumiLogoProps> = ({
     </div>
   );
 
-  // Standalone Squircle App Icon
-  if (variant === 'icon') {
+  // Standalone Squircle App Icon or Badge
+  if (variant === 'icon' || variant === 'badge') {
     return (
       <div className={`inline-flex items-center ${className}`}>
         {renderAppIconTile()}
@@ -220,15 +221,15 @@ export const NumiLogo: React.FC<NumiLogoProps> = ({
       {renderAppIconTile()}
       <div className="flex flex-col justify-center min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-lg sm:text-xl font-extrabold tracking-tight text-[#1D1D1F] leading-none">
+          <span className="text-lg sm:text-xl font-extrabold tracking-tight text-[#1D1D1F] dark:text-white leading-none">
             Numi
           </span>
-          <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#9EE42A]/20 text-[#3F6212] rounded-md border border-[#9EE42A]/30">
+          <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#9EE42A]/20 text-[#3F6212] dark:text-[#A3E635] rounded-md border border-[#9EE42A]/30">
             Tracker
           </span>
         </div>
         {showSubtitle && subtitle && (
-          <span className="text-[11px] font-medium text-[#86868B] truncate tracking-tight hidden lg:block leading-tight mt-0.5">
+          <span className="text-[11px] font-medium text-[#86868B] dark:text-[#8E8E93] truncate tracking-tight hidden lg:block leading-tight mt-0.5">
             {subtitle}
           </span>
         )}

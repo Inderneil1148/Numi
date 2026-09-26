@@ -131,13 +131,13 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
         {/* Left Column: Top Tag Summary Card & Create Tag Form */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-[#E0E2EC] space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E0E2EC]">
+          <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 shadow-xs border border-[#E0E2EC] dark:border-white/[0.08] space-y-4 transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E0E2EC] dark:border-white/[0.08]">
               <div>
-                <h2 className="text-base font-bold text-[#1F1F1F] tracking-tight">
+                <h2 className="text-base font-bold text-[#1F1F1F] dark:text-white tracking-tight">
                   Custom Tags
                 </h2>
-                <p className="text-xs text-[#747775]">
+                <p className="text-xs text-[#747775] dark:text-[#8E8E93]">
                   {tags.length} custom tags organized
                 </p>
               </div>
@@ -145,7 +145,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
               <button
                 type="button"
                 onClick={() => setIsCreating(!isCreating)}
-                className="inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold bg-[#0B57D0] text-white rounded-full hover:bg-[#1A73E8] transition-colors shadow-xs active:scale-95 cursor-pointer min-h-[32px]"
+                className="inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold bg-[#007AFF] hover:bg-[#0071E3] dark:bg-[#0A84FF] dark:hover:bg-[#0071E3] text-white rounded-full transition-colors shadow-xs active:scale-95 cursor-pointer min-h-[32px]"
               >
                 <Plus size={14} strokeWidth={2.5} />
                 <span>New Tag</span>
@@ -156,16 +156,16 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
             {isCreating && (
               <form
                 onSubmit={handleCreateSubmit}
-                className="p-4 bg-[#F0F4F9] rounded-2xl space-y-3 border border-[#E0E2EC]"
+                className="p-4 bg-[#F0F4F9] dark:bg-[#2C2C2E] rounded-2xl space-y-3 border border-[#E0E2EC] dark:border-white/[0.08]"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#1F1F1F]">
+                  <span className="text-xs font-semibold text-[#1F1F1F] dark:text-white">
                     Add New Tag
                   </span>
                   <button
                     type="button"
                     onClick={() => setIsCreating(false)}
-                    className="w-6 h-6 rounded-full bg-[#747775]/20 flex items-center justify-center text-[#444746] hover:text-[#1F1F1F] cursor-pointer"
+                    className="w-6 h-6 rounded-full bg-[#747775]/20 dark:bg-white/10 flex items-center justify-center text-[#444746] dark:text-[#8E8E93] hover:text-[#1F1F1F] dark:hover:text-white cursor-pointer"
                   >
                     <X size={13} strokeWidth={2.5} />
                   </button>
@@ -173,22 +173,22 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
 
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#747775]">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#747775] dark:text-[#8E8E93]">
                       #
                     </span>
                     <input
                       type="text"
-                      placeholder="tag-name (e.g. coffee, groceries)"
+                      placeholder="tag-name (e.g. travel, work)"
                       value={newTagName}
                       onChange={(e) => setNewTagName(e.target.value)}
                       autoFocus
-                      className="w-full pl-7 pr-3 py-2 text-xs font-medium bg-white rounded-xl text-[#1F1F1F] placeholder:text-[#747775] focus:outline-none focus:ring-1 focus:ring-[#0B57D0] min-h-[38px] border border-[#C4C7C5]"
+                      className="w-full pl-7 pr-3 py-2 text-xs font-medium bg-white dark:bg-[#1C1C1E] rounded-xl text-[#1F1F1F] dark:text-white placeholder:text-[#747775] dark:placeholder:text-[#636366] focus:outline-none focus:ring-1 focus:ring-[#007AFF] dark:focus:ring-[#0A84FF] min-h-[38px] border border-[#C4C7C5] dark:border-white/[0.1]"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={!newTagName.trim()}
-                    className="px-4 py-2 text-xs font-semibold bg-[#0B57D0] text-white rounded-xl hover:bg-[#1A73E8] disabled:opacity-40 min-h-[38px] transition-colors cursor-pointer shadow-xs"
+                    className="px-4 py-2 text-xs font-semibold bg-[#007AFF] dark:bg-[#0A84FF] text-white rounded-xl hover:bg-[#0071E3] disabled:opacity-40 min-h-[38px] transition-colors cursor-pointer shadow-xs"
                   >
                     Add
                   </button>
@@ -196,7 +196,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
 
                 {/* Color Selection */}
                 <div className="flex items-center gap-2 pt-1 flex-wrap">
-                  <span className="text-[11px] text-[#444746] font-medium">Color:</span>
+                  <span className="text-[11px] text-[#444746] dark:text-[#8E8E93] font-medium">Color:</span>
                   {TAG_COLOR_PALETTE.map((col) => (
                     <button
                       key={col.hex}
@@ -206,7 +206,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                         setNewTagColor(col.hex);
                       }}
                       className={`w-6 h-6 rounded-full transition-transform flex items-center justify-center cursor-pointer ${
-                        newTagColor === col.hex ? 'ring-2 ring-offset-2 ring-[#0B57D0] scale-110' : ''
+                        newTagColor === col.hex ? 'ring-2 ring-offset-2 ring-[#007AFF] dark:ring-[#0A84FF] scale-110' : ''
                       }`}
                       style={{ backgroundColor: col.hex }}
                       title={col.label}
@@ -220,12 +220,12 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
 
             {/* Untagged spending status callout */}
             {untaggedCount > 0 && (
-              <div className="p-3.5 rounded-2xl bg-[#E8F0FE] border border-[#D3E3FD] flex items-center justify-between text-xs flex-wrap gap-2">
+              <div className="p-3.5 rounded-2xl bg-[#E8F0FE] dark:bg-[#0A84FF]/15 border border-[#D3E3FD] dark:border-[#0A84FF]/30 flex items-center justify-between text-xs flex-wrap gap-2">
                 <div>
-                  <span className="font-semibold text-[#0B57D0]">
+                  <span className="font-semibold text-[#007AFF] dark:text-[#64D2FF]">
                     Untagged:
                   </span>{' '}
-                  <span className="text-[#1F1F1F]">
+                  <span className="text-[#1F1F1F] dark:text-white">
                     {untaggedCount} transaction{untaggedCount > 1 ? 's' : ''} (
                     <span className="tabular-nums font-semibold">
                       {formatCurrency(untaggedTotal, currency)}
@@ -233,7 +233,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                     )
                   </span>
                 </div>
-                <span className="text-[11px] text-[#747775] font-medium">
+                <span className="text-[11px] text-[#747775] dark:text-[#8E8E93] font-medium">
                   {formatPercentage(
                     totalExpenseSpend > 0 ? (untaggedTotal / totalExpenseSpend) * 100 : 0
                   )}{' '}
@@ -246,19 +246,19 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
 
         {/* Right Column: Tag Spending Rankings List */}
         <div className="lg:col-span-7 space-y-2">
-          <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#444746] tracking-tight uppercase">
+          <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#444746] dark:text-[#8E8E93] tracking-tight uppercase">
             <span>Spend by Tag</span>
-            <span className="normal-case text-[11px] text-[#747775] font-normal">Ranked by volume</span>
+            <span className="normal-case text-[11px] text-[#747775] dark:text-[#8E8E93] font-normal">Ranked by volume</span>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#E0E2EC] shadow-xs divide-y divide-[#E0E2EC] overflow-hidden">
+          <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-[#E0E2EC] dark:border-white/[0.08] shadow-xs divide-y divide-[#E0E2EC] dark:divide-white/[0.06] overflow-hidden transition-colors">
             {tagStats.map((tag) => {
               const isEditing = editingTagId === tag.id;
 
               return (
                 <div
                   key={tag.id}
-                  className="p-3.5 hover:bg-[#F0F4F9] transition-colors"
+                  className="p-3.5 hover:bg-[#F0F4F9] dark:hover:bg-[#2C2C2E]/60 transition-colors"
                 >
                   {isEditing ? (
                     <div className="space-y-2">
@@ -267,20 +267,20 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                           type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          className="flex-1 px-3 py-1.5 text-xs font-semibold bg-[#F0F4F9] rounded-xl min-h-[36px] border border-[#C4C7C5] focus:outline-none focus:ring-1 focus:ring-[#0B57D0]"
+                          className="flex-1 px-3 py-1.5 text-xs font-semibold bg-[#F0F4F9] dark:bg-[#2C2C2E] text-[#1F1F1F] dark:text-white rounded-xl min-h-[36px] border border-[#C4C7C5] dark:border-white/[0.1] focus:outline-none focus:ring-1 focus:ring-[#007AFF] dark:focus:ring-[#0A84FF]"
                           autoFocus
                         />
                         <button
                           type="button"
                           onClick={() => saveEdit(tag.id)}
-                          className="p-2 text-white bg-[#146C2E] rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                          className="p-2 text-white bg-[#146C2E] dark:bg-[#30D158] rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
                         >
                           <Check size={16} strokeWidth={2.5} />
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingTagId(null)}
-                          className="p-2 text-[#444746] bg-[#E0E2EC] rounded-xl hover:text-[#1F1F1F] cursor-pointer"
+                          className="p-2 text-[#444746] dark:text-[#8E8E93] bg-[#E0E2EC] dark:bg-[#3A3A3C] rounded-xl hover:text-[#1F1F1F] dark:hover:text-white cursor-pointer"
                         >
                           <X size={16} strokeWidth={2.5} />
                         </button>
@@ -292,7 +292,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                             type="button"
                             onClick={() => setEditColor(col.hex)}
                             className={`w-5 h-5 rounded-full ${
-                              editColor === col.hex ? 'ring-2 ring-offset-1 ring-[#0B57D0]' : ''
+                              editColor === col.hex ? 'ring-2 ring-offset-1 ring-[#007AFF] dark:ring-[#0A84FF]' : ''
                             }`}
                             style={{ backgroundColor: col.hex }}
                           />
@@ -307,7 +307,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                           <button
                             type="button"
                             onClick={() => onFilterByTag(tag.name)}
-                            className="group inline-flex items-center gap-1.5 text-xs font-semibold text-[#1F1F1F] hover:text-[#0B57D0] transition-colors cursor-pointer min-w-0"
+                            className="group inline-flex items-center gap-1.5 text-xs font-semibold text-[#1F1F1F] dark:text-white hover:text-[#007AFF] dark:hover:text-[#0A84FF] transition-colors cursor-pointer min-w-0"
                             title="Filter transactions by this tag"
                           >
                             <span
@@ -317,26 +317,26 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                             <span className="truncate max-w-[100px] sm:max-w-[180px]">#{tag.name}</span>
                             <ChevronRight
                               size={13}
-                              className="opacity-40 group-hover:opacity-100 text-[#0B57D0] shrink-0"
+                              className="opacity-40 group-hover:opacity-100 text-[#007AFF] dark:text-[#0A84FF] shrink-0"
                             />
                           </button>
 
-                          <span className="text-[10px] sm:text-[11px] text-[#747775] tabular-nums shrink-0">
+                          <span className="text-[10px] sm:text-[11px] text-[#747775] dark:text-[#8E8E93] tabular-nums shrink-0">
                             ({tag.count})
                           </span>
                         </div>
 
                         {/* Right: Spend Amount & Quick Actions */}
                         <div className="flex items-center gap-1.5 shrink-0 pl-1">
-                          <span className="text-xs font-semibold tabular-nums text-[#1F1F1F] whitespace-nowrap">
+                          <span className="text-xs font-semibold tabular-nums text-[#1F1F1F] dark:text-white whitespace-nowrap">
                             {formatCurrency(tag.spend, currency)}
                           </span>
 
-                          <div className="flex items-center pl-1 border-l border-[#E0E2EC] gap-0.5">
+                          <div className="flex items-center pl-1 border-l border-[#E0E2EC] dark:border-white/[0.08] gap-0.5">
                             <button
                               type="button"
                               onClick={() => startEdit(tag)}
-                              className="p-1 text-[#747775] hover:text-[#1F1F1F] transition-colors cursor-pointer active:scale-95"
+                              className="p-1 text-[#747775] dark:text-[#8E8E93] hover:text-[#1F1F1F] dark:hover:text-white transition-colors cursor-pointer active:scale-95"
                               aria-label={`Edit tag ${tag.name}`}
                             >
                               <Edit2 size={13} strokeWidth={2} />
@@ -355,8 +355,8 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                               }}
                               className={`px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer active:scale-95 flex items-center gap-1 ${
                                 confirmDeleteTagId === tag.id
-                                  ? 'bg-[#B3261E] text-white shadow-xs'
-                                  : 'text-[#747775] hover:text-[#B3261E]'
+                                  ? 'bg-[#B3261E] dark:bg-[#FF453A] text-white shadow-xs'
+                                  : 'text-[#747775] dark:text-[#8E8E93] hover:text-[#B3261E] dark:hover:text-[#FF453A]'
                               }`}
                               aria-label={`Delete tag ${tag.name}`}
                               title={confirmDeleteTagId === tag.id ? 'Click to confirm delete' : 'Delete tag'}
@@ -370,7 +370,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
 
                       {/* Material 3 Progress Bar */}
                       <div className="space-y-1">
-                        <div className="w-full h-1.5 bg-[#E0E2EC] rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-[#E0E2EC] dark:bg-[#2C2C2E] rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-300"
                             style={{
@@ -379,7 +379,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
                             }}
                           />
                         </div>
-                        <div className="flex items-center justify-between text-[10px] text-[#747775] font-medium">
+                        <div className="flex items-center justify-between text-[10px] text-[#747775] dark:text-[#8E8E93] font-medium">
                           <span>{formatPercentage(tag.percentage)} of total</span>
                           {tag.spend > 0 && tag.count > 0 && (
                             <span>
@@ -395,7 +395,7 @@ export const TagAnalytics: React.FC<TagAnalyticsProps> = ({
             })}
 
             {tagStats.length === 0 && (
-              <div className="p-6 text-center text-xs text-[#747775]">
+              <div className="p-6 text-center text-xs text-[#747775] dark:text-[#8E8E93]">
                 No custom tags created yet.
               </div>
             )}

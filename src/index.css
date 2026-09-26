@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;
@@ -11,9 +13,23 @@
     touch-action: manipulation;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.015em;
+  }
+
+  html {
     background-color: #F2F2F7;
     color: #1D1D1F;
-    letter-spacing: -0.015em;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark {
+    background-color: #000000;
+    color: #F5F5F7;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: transparent;
   }
 
   /* Monospace numbers with tabular figures for currency alignment */
@@ -40,3 +56,8 @@
 .apple-card-sheen {
   background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(245,245,247,0.85) 100%);
 }
+
+.dark .apple-card-sheen {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%);
+}
+

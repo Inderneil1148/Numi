@@ -39,19 +39,19 @@ export const OverviewCard: React.FC<OverviewCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs border border-[#E0E2EC] space-y-3.5 sm:space-y-5 transition-all">
+    <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs border border-[#E0E2EC] dark:border-white/[0.08] space-y-3.5 sm:space-y-5 transition-all">
       {/* Top row: Net Cash Flow with Material 3 Chip */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-[12px] sm:text-[13px] font-medium text-[#444746] tracking-tight">
+            <span className="text-[12px] sm:text-[13px] font-medium text-[#444746] dark:text-[#8E8E93] tracking-tight">
               Net Balance
             </span>
-            <span className="px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold bg-[#D3E3FD] text-[#041E49] rounded-full">
+            <span className="px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold bg-[#D3E3FD] text-[#041E49] dark:bg-[#0A84FF]/20 dark:text-[#64D2FF] rounded-full">
               {filterLabel}
             </span>
           </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F1F1F] tabular-nums truncate">
+          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F1F1F] dark:text-white tabular-nums truncate">
             {netBalance >= 0 ? '+' : ''}
             {formatCurrency(netBalance, currency, { signDisplay: 'never' })}
           </div>
@@ -60,7 +60,7 @@ export const OverviewCard: React.FC<OverviewCardProps> = ({
         <button
           type="button"
           onClick={handleInsightsClick}
-          className="w-9 h-9 rounded-full bg-[#F0F4F9] hover:bg-[#E0E2EC] flex items-center justify-center text-[#444746] hover:text-[#1F1F1F] transition-all active:scale-95 shrink-0 cursor-pointer"
+          className="w-9 h-9 rounded-full bg-[#F0F4F9] hover:bg-[#E0E2EC] dark:bg-[#2C2C2E] dark:hover:bg-[#3A3A3C] flex items-center justify-center text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white transition-all active:scale-95 shrink-0 cursor-pointer"
           aria-label="View financial insights"
           title="View detailed insights"
         >
@@ -70,26 +70,26 @@ export const OverviewCard: React.FC<OverviewCardProps> = ({
 
       {/* Middle row: Inflow vs Outflow MD3 Surface Containers */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
-        <div className="p-3 sm:p-3.5 bg-[#F0F4F9] rounded-2xl border border-[#E0E2EC]/70 min-w-0">
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-[#444746] mb-0.5">
-            <div className="w-5 h-5 rounded-full bg-[#146C2E]/15 flex items-center justify-center text-[#146C2E] shrink-0">
+        <div className="p-3 sm:p-3.5 bg-[#F0F4F9] dark:bg-[#2C2C2E]/60 rounded-2xl border border-[#E0E2EC]/70 dark:border-white/[0.06] min-w-0">
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-[#444746] dark:text-[#8E8E93] mb-0.5">
+            <div className="w-5 h-5 rounded-full bg-[#146C2E]/15 dark:bg-[#30D158]/20 flex items-center justify-center text-[#146C2E] dark:text-[#30D158] shrink-0">
               <ArrowDownLeft size={12} strokeWidth={2.5} />
             </div>
             <span className="truncate">Income</span>
           </div>
-          <div className="text-sm sm:text-base lg:text-lg font-bold tabular-nums text-[#146C2E] tracking-tight truncate">
+          <div className="text-sm sm:text-base lg:text-lg font-bold tabular-nums text-[#146C2E] dark:text-[#30D158] tracking-tight truncate">
             +{formatCurrency(income, currency, { signDisplay: 'never' })}
           </div>
         </div>
 
-        <div className="p-3 sm:p-3.5 bg-[#F0F4F9] rounded-2xl border border-[#E0E2EC]/70 min-w-0">
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-[#444746] mb-0.5">
-            <div className="w-5 h-5 rounded-full bg-[#B3261E]/15 flex items-center justify-center text-[#B3261E] shrink-0">
+        <div className="p-3 sm:p-3.5 bg-[#F0F4F9] dark:bg-[#2C2C2E]/60 rounded-2xl border border-[#E0E2EC]/70 dark:border-white/[0.06] min-w-0">
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-[#444746] dark:text-[#8E8E93] mb-0.5">
+            <div className="w-5 h-5 rounded-full bg-[#B3261E]/15 dark:bg-[#FF453A]/20 flex items-center justify-center text-[#B3261E] dark:text-[#FF453A] shrink-0">
               <ArrowUpRight size={12} strokeWidth={2.5} />
             </div>
             <span className="truncate">Spending</span>
           </div>
-          <div className="text-sm sm:text-base lg:text-lg font-bold tabular-nums text-[#B3261E] tracking-tight truncate">
+          <div className="text-sm sm:text-base lg:text-lg font-bold tabular-nums text-[#B3261E] dark:text-[#FF453A] tracking-tight truncate">
             -{formatCurrency(expense, currency, { signDisplay: 'never' })}
           </div>
         </div>
@@ -99,21 +99,21 @@ export const OverviewCard: React.FC<OverviewCardProps> = ({
       {monthlyBudget > 0 && (
         <div className="space-y-1.5 pt-1">
           <div className="flex items-center justify-between text-xs tracking-tight flex-wrap gap-1">
-            <span className="text-[#444746]">
-              Monthly Limit: <span className="text-[#1F1F1F] font-semibold">{formatCurrency(monthlyBudget, currency)}</span>
+            <span className="text-[#444746] dark:text-[#8E8E93]">
+              Monthly Limit: <span className="text-[#1F1F1F] dark:text-white font-semibold">{formatCurrency(monthlyBudget, currency)}</span>
             </span>
-            <span className={`font-semibold ${isBudgetWarning ? 'text-[#B3261E]' : 'text-[#444746]'}`}>
+            <span className={`font-semibold ${isBudgetWarning ? 'text-[#B3261E] dark:text-[#FF453A]' : 'text-[#444746] dark:text-[#8E8E93]'}`}>
               {formatPercentage(budgetPct)} spent
             </span>
           </div>
-          <div className="w-full h-2 bg-[#E0E2EC] rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-[#E0E2EC] dark:bg-[#2C2C2E] rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-500 rounded-full ${
                 budgetPct > 100
-                  ? 'bg-[#B3261E]'
+                  ? 'bg-[#B3261E] dark:bg-[#FF453A]'
                   : isBudgetWarning
-                  ? 'bg-[#E37400]'
-                  : 'bg-[#0B57D0]'
+                  ? 'bg-[#E37400] dark:bg-[#FF9F0A]'
+                  : 'bg-[#0B57D0] dark:bg-[#0A84FF]'
               }`}
               style={{ width: `${Math.min(budgetPct, 100)}%` }}
             />
