@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Transaction,
   CustomTag,
@@ -21,6 +21,18 @@ import {
 import { DEFAULT_CATEGORIES, DEFAULT_TAGS, TAG_COLOR_PALETTE } from './utils/constants';
 import { useHaptics } from './hooks/useHaptics';
 import { useTheme } from './hooks/useTheme';
+import { useAuth } from './context/AuthContext';
+import {
+  subscribeUserTransactions,
+  subscribeUserTags,
+  subscribeUserSettings,
+  saveTransactionToCloud,
+  deleteTransactionFromCloud,
+  saveTagToCloud,
+  deleteTagFromCloud,
+  saveUserSettingsToCloud,
+  syncInitialLocalDataToCloud,
+} from './services/firestoreSync';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { OverviewCard } from './components/OverviewCard';
@@ -30,17 +42,103 @@ import { TagAnalytics } from './components/TagAnalytics';
 import { AnalyticsView } from './components/AnalyticsView';
 import { TransactionModal } from './components/TransactionModal';
 import { SettingsModal } from './components/SettingsModal';
+import { AccountModal } from './components/AccountModal';
 import { DownloadBanner } from './components/DownloadBanner';
 
 export default function App() {
   const { tap, success, warning } = useHaptics();
   const { theme, setTheme } = useTheme();
+  const { currentUser, setSyncStatus, setLastSyncedAt } = useAuth();
 
   // Core Data States
   const [transactions, setTransactions] = useState<Transaction[]>(loadStoredTransactions);
   const [tags, setTags] = useState<CustomTag[]>(loadStoredTags);
   const [currency, setCurrency] = useState<CurrencyConfig>(loadStoredCurrency);
   const [budget, setBudget] = useState<BudgetConfig>(loadStoredBudget);
+
+  // Cloud Account & Multi-Device Modal State
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+
+  // Real-time Cloud Database Synchronization across devices
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // 1. Initial migration: if user is logged in and cloud is empty but local has items
+    syncInitialLocalDataToCloud(currentUser.uid, transactions, tags, {
+      currency,
+      budget,
+      theme,
+      email: currentUser.email || undefined,
+      displayName: currentUser.displayName || undefined,
+    })
+      .then(({ migratedCount }) => {
+        if (migratedCount > 0) {
+          setToastMessage(`✓ Synced ${migratedCount} transactions to your cloud database.`);
+          setTimeout(() => setToastMessage(null), 3500);
+        }
+      })
+      .catch((err) => console.error('Initial cloud migration error:', err));
+
+    // 2. Real-time transactions listener (instant multi-device sync)
+    const unsubscribeTx = subscribeUserTransactions(
+      currentUser.uid,
+      (cloudTx) => {
+        setTransactions(cloudTx);
+        saveTransactions(cloudTx);
+        setLastSyncedAt(new Date());
+        setSyncStatus('synced');
+      },
+      (err) => {
+        console.error('Failed to sync transactions:', err);
+      }
+    );
+
+    // 3. Real-time tags listener
+    const unsubscribeTags = subscribeUserTags(
+      currentUser.uid,
+      (cloudTags) => {
+        if (cloudTags && cloudTags.length > 0) {
+          setTags(cloudTags);
+          saveStoredTags(cloudTags);
+        }
+      },
+      (err) => {
+        console.error('Failed to sync tags:', err);
+      }
+    );
+
+    // 4. Real-time user profile & settings listener
+    const unsubscribeSettings = subscribeUserSettings(
+      currentUser.uid,
+      (cloudSettings) => {
+        if (cloudSettings.currency) {
+          setCurrency(cloudSettings.currency);
+          saveStoredCurrency(cloudSettings.currency);
+        }
+        if (cloudSettings.budget) {
+          setBudget(cloudSettings.budget);
+          saveStoredBudget(cloudSettings.budget);
+        }
+        if (
+          cloudSettings.theme &&
+          (cloudSettings.theme === 'light' ||
+            cloudSettings.theme === 'dark' ||
+            cloudSettings.theme === 'system')
+        ) {
+          setTheme(cloudSettings.theme);
+        }
+      },
+      (err) => {
+        console.error('Failed to sync settings:', err);
+      }
+    );
+
+    return () => {
+      unsubscribeTx();
+      unsubscribeTags();
+      unsubscribeSettings();
+    };
+  }, [currentUser]);
 
   // Top Download Banner State
   const [showDownloadBanner, setShowDownloadBanner] = useState<boolean>(() => {
@@ -131,7 +229,7 @@ export default function App() {
     return counts;
   }, [timeFilteredTransactions]);
 
-  // Data Actions
+  // Data Actions with Cloud Sync
   const handleSaveTransaction = (
     txData: Omit<Transaction, 'id' | 'createdAt'> & { id?: string }
   ) => {
@@ -150,6 +248,17 @@ export default function App() {
       );
       setTransactions(updated);
       saveTransactions(updated);
+
+      const updatedTx = updated.find((t) => t.id === txData.id);
+      if (currentUser && updatedTx) {
+        setSyncStatus('syncing');
+        saveTransactionToCloud(currentUser.uid, updatedTx)
+          .then(() => {
+            setSyncStatus('synced');
+            setLastSyncedAt(new Date());
+          })
+          .catch((err) => console.error('Cloud save failed:', err));
+      }
     } else {
       // Create new
       const newTx: Transaction = {
@@ -171,6 +280,16 @@ export default function App() {
       const updated = [newTx, ...transactions];
       setTransactions(updated);
       saveTransactions(updated);
+
+      if (currentUser) {
+        setSyncStatus('syncing');
+        saveTransactionToCloud(currentUser.uid, newTx)
+          .then(() => {
+            setSyncStatus('synced');
+            setLastSyncedAt(new Date());
+          })
+          .catch((err) => console.error('Cloud save failed:', err));
+      }
     }
   };
 
@@ -179,6 +298,16 @@ export default function App() {
     const updated = transactions.filter((t) => t.id !== id);
     setTransactions(updated);
     saveTransactions(updated);
+
+    if (currentUser) {
+      setSyncStatus('syncing');
+      deleteTransactionFromCloud(currentUser.uid, id)
+        .then(() => {
+          setSyncStatus('synced');
+          setLastSyncedAt(new Date());
+        })
+        .catch((err) => console.error('Cloud delete failed:', err));
+    }
   };
 
   const handleCreateTag = (name: string, color?: string): CustomTag => {
@@ -195,6 +324,12 @@ export default function App() {
     const updated = [...tags, newTag];
     setTags(updated);
     saveStoredTags(updated);
+
+    if (currentUser) {
+      saveTagToCloud(currentUser.uid, newTag).catch((err) =>
+        console.error('Cloud tag save failed:', err)
+      );
+    }
     return newTag;
   };
 
@@ -208,13 +343,22 @@ export default function App() {
     setTags(updatedTags);
     saveStoredTags(updatedTags);
 
+    const updatedCurrentTag = updatedTags.find((t) => t.id === id);
+    if (currentUser && updatedCurrentTag) {
+      saveTagToCloud(currentUser.uid, updatedCurrentTag).catch(console.error);
+    }
+
     if (oldTag.name !== newName) {
       const updatedTx = transactions.map((tx) => {
         if (tx.customTags && tx.customTags.includes(oldTag.name)) {
-          return {
+          const modTx = {
             ...tx,
             customTags: tx.customTags.map((tg) => (tg === oldTag.name ? newName : tg)),
           };
+          if (currentUser) {
+            saveTransactionToCloud(currentUser.uid, modTx).catch(console.error);
+          }
+          return modTx;
         }
         return tx;
       });
@@ -232,6 +376,10 @@ export default function App() {
     setTags(updatedTags);
     saveStoredTags(updatedTags);
 
+    if (currentUser) {
+      deleteTagFromCloud(currentUser.uid, id).catch(console.error);
+    }
+
     if (selectedTag === tagName) {
       setSelectedTag(null);
     }
@@ -242,11 +390,30 @@ export default function App() {
     setTransactions([]);
     setSelectedTag(null);
     clearAllTransactionsAndData();
+
+    if (currentUser) {
+      transactions.forEach((tx) => {
+        deleteTransactionFromCloud(currentUser.uid, tx.id).catch(console.error);
+      });
+    }
+
     setToastMessage('✓ All transactions erased. Everything reset to zero.');
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
   };
+
+  const handleForceSync = useCallback(async () => {
+    if (!currentUser) return;
+    setSyncStatus('syncing');
+    await syncInitialLocalDataToCloud(currentUser.uid, transactions, tags, {
+      currency,
+      budget,
+      theme,
+    });
+    setLastSyncedAt(new Date());
+    setSyncStatus('synced');
+  }, [currentUser, transactions, tags, currency, budget, theme, setSyncStatus, setLastSyncedAt]);
 
   const handleImportData = (data: { transactions: Transaction[]; tags: CustomTag[] }) => {
     success();
@@ -290,6 +457,10 @@ export default function App() {
             tap('medium');
             setEditingTx(null);
             setIsModalOpen(true);
+          }}
+          onOpenAccount={() => {
+            tap('light');
+            setIsAccountOpen(true);
           }}
         />
 
@@ -404,11 +575,17 @@ export default function App() {
           onUpdateCurrency={(c) => {
             setCurrency(c);
             saveStoredCurrency(c);
+            if (currentUser) {
+              saveUserSettingsToCloud(currentUser.uid, { currency: c }).catch(console.error);
+            }
           }}
           budget={budget}
           onUpdateBudget={(b) => {
             setBudget(b);
             saveStoredBudget(b);
+            if (currentUser) {
+              saveUserSettingsToCloud(currentUser.uid, { budget: b }).catch(console.error);
+            }
           }}
           transactions={transactions}
           tags={tags}
@@ -418,6 +595,19 @@ export default function App() {
           onToggleDownloadBanner={handleToggleDownloadBanner}
           theme={theme}
           onUpdateTheme={setTheme}
+          onOpenAccountModal={() => {
+            tap('light');
+            setIsAccountOpen(true);
+          }}
+        />
+
+        {/* Multi-Device Cloud Sync & Account Modal */}
+        <AccountModal
+          isOpen={isAccountOpen}
+          onClose={() => setIsAccountOpen(false)}
+          transactionCount={transactions.length}
+          tagCount={tags.length}
+          onForceSync={handleForceSync}
         />
 
         {/* Global Toast Notification */}

@@ -1,0 +1,127 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and global app preferences",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "currency": {
+          "type": "object"
+        },
+        "budget": {
+          "type": "object"
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["system", "light", "dark"]
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["userId"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial income or expense transaction",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "enum": ["expense", "income"]
+        },
+        "amount": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "customTags": {
+          "type": "array"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "userId", "type", "amount", "title", "category", "customTags", "date", "createdAt"]
+    },
+    "CustomTag": {
+      "title": "CustomTag",
+      "description": "User created custom tag for transactions",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "createdAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "userId", "name", "color", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user settings, preferences, and profile information"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "User financial transactions collection"
+    },
+    "/users/{userId}/tags/{tagId}": {
+      "schema": "CustomTag",
+      "description": "User custom tags collection"
+    }
+  }
+}

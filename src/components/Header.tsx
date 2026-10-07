@@ -1,7 +1,8 @@
 import React from 'react';
 import { ActiveTab, TimeFilter, CurrencyConfig } from '../types/finance';
-import { Settings, Plus, CreditCard, Tag, ChartPie } from 'lucide-react';
+import { Settings, Plus, CreditCard, Tag, ChartPie, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
+import { useAuth } from '../context/AuthContext';
 import { NumiLogo } from './NumiLogo';
 
 interface HeaderProps {
@@ -12,6 +13,7 @@ interface HeaderProps {
   currency?: CurrencyConfig;
   onTabChange?: (tab: ActiveTab) => void;
   onOpenAddModal?: () => void;
+  onOpenAccount?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,8 +24,10 @@ export const Header: React.FC<HeaderProps> = ({
   currency,
   onTabChange,
   onOpenAddModal,
+  onOpenAccount,
 }) => {
   const { tap } = useHaptics();
+  const { currentUser, syncStatus, isOnline } = useAuth();
   const currentSymbol = currency?.symbol || '₹';
   const currentCode = currency?.code || 'INR';
 
@@ -113,8 +117,36 @@ export const Header: React.FC<HeaderProps> = ({
             </nav>
           )}
 
-          {/* Mobile Right Action Icons (New Transaction + Settings) */}
+          {/* Mobile Right Action Icons (Cloud Sync, New Transaction + Settings) */}
           <div className="flex md:hidden items-center gap-1.5">
+            {onOpenAccount && (
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  onOpenAccount();
+                }}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 relative ${
+                  currentUser
+                    ? 'text-[#34C759] bg-[#34C759]/10 dark:bg-[#34C759]/20'
+                    : 'text-[#007AFF] bg-[#007AFF]/10 dark:bg-[#0A84FF]/20'
+                }`}
+                title={currentUser ? `Cloud Sync Active (${currentUser.email})` : 'Sync Across Devices'}
+                aria-label="Cloud Sync"
+              >
+                {syncStatus === 'syncing' ? (
+                  <RefreshCw size={15} className="animate-spin text-[#007AFF]" />
+                ) : currentUser ? (
+                  <CloudCheck size={16} strokeWidth={2.2} />
+                ) : (
+                  <Cloud size={16} strokeWidth={2} />
+                )}
+                {currentUser && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#34C759] ring-1.5 ring-white dark:ring-[#1C1C1E]"></span>
+                )}
+              </button>
+            )}
+
             {onOpenAddModal && (
               <button
                 type="button"
@@ -174,8 +206,38 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Desktop Right Actions: + Add Button & Settings */}
+          {/* Desktop Right Actions: Cloud Sync, + Add Button & Settings */}
           <div className="hidden md:flex items-center gap-2">
+            {onOpenAccount && (
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  onOpenAccount();
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer active:scale-95 min-h-[32px] ${
+                  currentUser
+                    ? 'bg-[#34C759]/10 hover:bg-[#34C759]/15 text-[#30D158] dark:text-[#34C759] border-[#34C759]/30'
+                    : 'bg-white dark:bg-[#1C1C1E] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#007AFF] dark:text-[#0A84FF] border-black/[0.08] dark:border-white/[0.08]'
+                }`}
+                title={currentUser ? `Cloud Sync Active: ${currentUser.email}` : 'Sync across phones and laptops'}
+              >
+                {syncStatus === 'syncing' ? (
+                  <RefreshCw size={14} className="animate-spin text-[#007AFF]" />
+                ) : currentUser ? (
+                  <CloudCheck size={14} strokeWidth={2.2} />
+                ) : (
+                  <Cloud size={14} strokeWidth={2} />
+                )}
+                <span>
+                  {currentUser ? 'Cloud Synced' : 'Sync Devices'}
+                </span>
+                {currentUser && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse"></span>
+                )}
+              </button>
+            )}
+
             {onOpenAddModal && (
               <button
                 type="button"

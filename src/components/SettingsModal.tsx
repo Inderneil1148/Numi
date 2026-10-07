@@ -15,8 +15,13 @@ import {
   Sun,
   Moon,
   Monitor,
+  Cloud,
+  CloudCheck,
+  Smartphone,
+  ChevronRight,
 } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
+import { useAuth } from '../context/AuthContext';
 import { NumiLogo } from './NumiLogo';
 
 interface SettingsModalProps {
@@ -34,6 +39,7 @@ interface SettingsModalProps {
   onToggleDownloadBanner?: (show: boolean) => void;
   theme: ThemeMode;
   onUpdateTheme: (theme: ThemeMode) => void;
+  onOpenAccountModal?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -51,8 +57,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onToggleDownloadBanner,
   theme,
   onUpdateTheme,
+  onOpenAccountModal,
 }) => {
   const { tap, success, warning } = useHaptics();
+  const { currentUser, syncStatus } = useAuth();
   const [budgetInput, setBudgetInput] = useState(budget.monthlyLimit.toString());
   const [savedBudgetNotice, setSavedBudgetNotice] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -171,6 +179,61 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Inset Grouped Settings Body (iOS Settings App Style) */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          {/* Multi-Device Cloud Database Sync */}
+          <div className="space-y-1.5">
+            <span className="text-[12px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider px-3 flex items-center gap-1.5">
+              <Cloud size={13} />
+              <span>Multi-Device Cloud Sync</span>
+            </span>
+
+            <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-black/[0.04] dark:border-white/[0.08] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  if (onOpenAccountModal) {
+                    onClose();
+                    onOpenAccountModal();
+                  }
+                }}
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    currentUser
+                      ? 'bg-[#34C759]/15 text-[#30D158] dark:text-[#34C759]'
+                      : 'bg-[#007AFF]/10 text-[#007AFF] dark:text-[#0A84FF]'
+                  }`}>
+                    {currentUser ? <CloudCheck size={19} strokeWidth={2.2} /> : <Smartphone size={19} />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white leading-tight">
+                        {currentUser ? (currentUser.displayName || currentUser.email) : 'Connect All Devices'}
+                      </p>
+                      {currentUser && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#34C759]/15 text-[#30D158] dark:text-[#34C759]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse"></span>
+                          Synced
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#8E8E93] leading-normal">
+                      {currentUser
+                        ? 'Real-time database sync active'
+                        : 'Sign in to use on iPhone, Mac, Windows & Android'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#007AFF] dark:text-[#0A84FF]">
+                  <span>{currentUser ? 'Manage' : 'Sign In'}</span>
+                  <ChevronRight size={16} className="text-[#8E8E93]" />
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* Appearance / Theme Section */}
           <div className="space-y-1.5">
             <span className="text-[12px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider px-3 flex items-center gap-1.5">
