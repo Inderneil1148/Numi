@@ -49,12 +49,16 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   const [isSyncingManual, setIsSyncingManual] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
+  const [isCopiedDomain, setIsCopiedDomain] = useState(false);
+
   if (!isOpen) return null;
 
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+
   const handleGoogleSignIn = async () => {
-    tap('medium');
     setIsSigningIn(true);
     setSyncMessage(null);
+    clearAuthError();
     try {
       const ok = await signInWithGoogle();
       if (ok) {
@@ -65,6 +69,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       warning();
     } finally {
       setIsSigningIn(false);
+    }
+  };
+
+  const handleCopyDomain = () => {
+    if (typeof navigator !== 'undefined' && currentHost) {
+      navigator.clipboard.writeText(currentHost);
+      setIsCopiedDomain(true);
+      setTimeout(() => setIsCopiedDomain(false), 3000);
     }
   };
 
@@ -139,18 +151,42 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           )}
 
           {authError && (
-            <div className="p-3 rounded-2xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-semibold flex items-center justify-between gap-2 border border-[#FF3B30]/20">
-              <div className="flex items-center gap-2">
-                <AlertCircle size={16} className="shrink-0" />
-                <span>{authError}</span>
+            <div className="p-3.5 rounded-2xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs space-y-2.5 border border-[#FF3B30]/25">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 min-w-0">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-[#FF3B30]" />
+                  <p className="font-semibold leading-relaxed break-words text-[#D70015] dark:text-[#FF453A]">
+                    {authError}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearAuthError}
+                  className="text-[11px] underline font-bold shrink-0 cursor-pointer text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
+                >
+                  Dismiss
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={clearAuthError}
-                className="text-[11px] underline font-bold shrink-0 cursor-pointer"
-              >
-                Dismiss
-              </button>
+
+              {/* Action buttons if unauthorized domain */}
+              {authError.toLowerCase().includes('authorized domain') && (
+                <div className="pt-1 border-t border-[#FF3B30]/20 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyDomain}
+                    className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#2C2C2E] border border-[#FF3B30]/30 text-xs font-semibold text-[#1D1D1F] dark:text-white shadow-xs hover:bg-[#FF3B30]/10 transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>{isCopiedDomain ? '✓ Domain Copied!' : `Copy Domain (${currentHost})`}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    className="px-3 py-1.5 rounded-xl bg-[#007AFF] text-white text-xs font-semibold shadow-xs hover:bg-[#0071E3] transition-colors cursor-pointer"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

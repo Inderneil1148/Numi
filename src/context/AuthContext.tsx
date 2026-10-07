@@ -100,14 +100,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Handle popup blocked by browser
       if (code === 'auth/popup-blocked' || message.includes('popup-blocked')) {
         console.warn('Google sign-in popup was blocked by browser.');
-        setAuthError('Pop-up window was blocked. Please allow pop-ups for this site and try again.');
+        setAuthError('Pop-up was blocked by your browser. Please allow pop-ups for this site, or open in a full browser tab.');
+        setSyncStatus(currentUser ? 'synced' : 'local-only');
+        return false;
+      }
+
+      // Handle unauthorized domain (e.g. Firebase project missing Cloud Run domain)
+      const isUnauthorizedDomain =
+        code === 'auth/unauthorized-domain' ||
+        message.includes('unauthorized-domain') ||
+        message.includes('not authorized to run this operation');
+
+      if (isUnauthorizedDomain) {
+        const domain = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+        console.warn(`Domain unauthorized for Firebase Auth: ${domain}`);
+        setAuthError(
+          `Domain "${domain}" is not in your Firebase Authorized Domains list. Please add "${domain}" in Firebase Console > Authentication > Settings > Authorized domains.`
+        );
+        setSyncStatus(currentUser ? 'synced' : 'local-only');
+        return false;
+      }
+
+      // Handle operation not allowed
+      const isOperationNotAllowed =
+        code === 'auth/operation-not-allowed' ||
+        message.includes('operation-not-allowed');
+
+      if (isOperationNotAllowed) {
+        console.warn('Google Sign-In is not enabled in Firebase Authentication.');
+        setAuthError('Google Sign-In is not enabled in Firebase Authentication. Please enable Google provider in the Firebase Console.');
+        setSyncStatus(currentUser ? 'synced' : 'local-only');
+        return false;
+      }
+
+      // Handle network failure
+      const isNetworkError =
+        code === 'auth/network-request-failed' ||
+        message.includes('network-request-failed');
+
+      if (isNetworkError) {
+        console.warn('Network request failed during Google sign-in.');
+        setAuthError('Network error connecting to Google Auth. Please check your internet connection and try again.');
         setSyncStatus(currentUser ? 'synced' : 'local-only');
         return false;
       }
 
       // Log other unexpected errors as a warning without breaking the applet
       console.warn('Google sign-in notice:', message || err);
-      setAuthError('Sign-in could not be completed. Please check your network and try again.');
+      let cleanMessage = message.replace(/^Firebase:\s*Error\s*\((.*?)\)\.?/i, '$1').trim();
+      if (!cleanMessage || cleanMessage === message) {
+        cleanMessage = message.replace(/^FirebaseError:\s*/i, '').trim();
+      }
+      setAuthError(cleanMessage || 'Google sign-in could not be completed. Please try again.');
       setSyncStatus(currentUser ? 'synced' : 'local-only');
       return false;
     }
