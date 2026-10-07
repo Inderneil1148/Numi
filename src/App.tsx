@@ -77,7 +77,7 @@ export default function App() {
           setTimeout(() => setToastMessage(null), 3500);
         }
       })
-      .catch((err) => console.error('Initial cloud migration error:', err));
+      .catch((err) => console.warn('Initial cloud migration notice:', err));
 
     // 2. Real-time transactions listener (instant multi-device sync)
     const unsubscribeTx = subscribeUserTransactions(
@@ -89,7 +89,7 @@ export default function App() {
         setSyncStatus('synced');
       },
       (err) => {
-        console.error('Failed to sync transactions:', err);
+        console.warn('Transaction sync notice:', err);
       }
     );
 
@@ -103,7 +103,7 @@ export default function App() {
         }
       },
       (err) => {
-        console.error('Failed to sync tags:', err);
+        console.warn('Tags sync notice:', err);
       }
     );
 
@@ -129,7 +129,7 @@ export default function App() {
         }
       },
       (err) => {
-        console.error('Failed to sync settings:', err);
+        console.warn('Settings sync notice:', err);
       }
     );
 
@@ -257,7 +257,7 @@ export default function App() {
             setSyncStatus('synced');
             setLastSyncedAt(new Date());
           })
-          .catch((err) => console.error('Cloud save failed:', err));
+          .catch((err) => console.warn('Cloud save notice:', err));
       }
     } else {
       // Create new
@@ -288,7 +288,7 @@ export default function App() {
             setSyncStatus('synced');
             setLastSyncedAt(new Date());
           })
-          .catch((err) => console.error('Cloud save failed:', err));
+          .catch((err) => console.warn('Cloud save notice:', err));
       }
     }
   };
@@ -306,7 +306,7 @@ export default function App() {
           setSyncStatus('synced');
           setLastSyncedAt(new Date());
         })
-        .catch((err) => console.error('Cloud delete failed:', err));
+        .catch((err) => console.warn('Cloud delete notice:', err));
     }
   };
 
@@ -327,7 +327,7 @@ export default function App() {
 
     if (currentUser) {
       saveTagToCloud(currentUser.uid, newTag).catch((err) =>
-        console.error('Cloud tag save failed:', err)
+        console.warn('Cloud tag save notice:', err)
       );
     }
     return newTag;
@@ -345,7 +345,7 @@ export default function App() {
 
     const updatedCurrentTag = updatedTags.find((t) => t.id === id);
     if (currentUser && updatedCurrentTag) {
-      saveTagToCloud(currentUser.uid, updatedCurrentTag).catch(console.error);
+      saveTagToCloud(currentUser.uid, updatedCurrentTag).catch((err) => console.warn(err));
     }
 
     if (oldTag.name !== newName) {
@@ -356,7 +356,7 @@ export default function App() {
             customTags: tx.customTags.map((tg) => (tg === oldTag.name ? newName : tg)),
           };
           if (currentUser) {
-            saveTransactionToCloud(currentUser.uid, modTx).catch(console.error);
+            saveTransactionToCloud(currentUser.uid, modTx).catch((err) => console.warn(err));
           }
           return modTx;
         }
@@ -377,7 +377,7 @@ export default function App() {
     saveStoredTags(updatedTags);
 
     if (currentUser) {
-      deleteTagFromCloud(currentUser.uid, id).catch(console.error);
+      deleteTagFromCloud(currentUser.uid, id).catch((err) => console.warn(err));
     }
 
     if (selectedTag === tagName) {
@@ -393,7 +393,7 @@ export default function App() {
 
     if (currentUser) {
       transactions.forEach((tx) => {
-        deleteTransactionFromCloud(currentUser.uid, tx.id).catch(console.error);
+        deleteTransactionFromCloud(currentUser.uid, tx.id).catch((err) => console.warn(err));
       });
     }
 
@@ -576,7 +576,7 @@ export default function App() {
             setCurrency(c);
             saveStoredCurrency(c);
             if (currentUser) {
-              saveUserSettingsToCloud(currentUser.uid, { currency: c }).catch(console.error);
+              saveUserSettingsToCloud(currentUser.uid, { currency: c }).catch((err) => console.warn(err));
             }
           }}
           budget={budget}
@@ -584,7 +584,7 @@ export default function App() {
             setBudget(b);
             saveStoredBudget(b);
             if (currentUser) {
-              saveUserSettingsToCloud(currentUser.uid, { budget: b }).catch(console.error);
+              saveUserSettingsToCloud(currentUser.uid, { budget: b }).catch((err) => console.warn(err));
             }
           }}
           transactions={transactions}

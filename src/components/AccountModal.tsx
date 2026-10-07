@@ -56,9 +56,11 @@ export const AccountModal: React.FC<AccountModalProps> = ({
     setIsSigningIn(true);
     setSyncMessage(null);
     try {
-      await signInWithGoogle();
-      success();
-      setSyncMessage('Successfully signed in! Your data is now syncing across devices.');
+      const ok = await signInWithGoogle();
+      if (ok) {
+        success();
+        setSyncMessage('Successfully signed in! Your data is now syncing across devices.');
+      }
     } catch {
       warning();
     } finally {
@@ -73,7 +75,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       success();
       setSyncMessage('Signed out. Local data is retained on this device.');
     } catch (err) {
-      console.error(err);
+      console.warn('Sign out notice:', err);
     }
   };
 
@@ -87,7 +89,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       setSyncMessage('Sync complete! All devices are up to date.');
       setTimeout(() => setSyncMessage(null), 3500);
     } catch (err) {
-      console.error(err);
+      console.warn('Manual sync notice:', err);
       warning();
     } finally {
       setIsSyncingManual(false);

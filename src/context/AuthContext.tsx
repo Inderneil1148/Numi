@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean;
   syncStatus: SyncStatus;
   setSyncStatus: (status: SyncStatus) => void;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
   signOutUser: () => Promise<void>;
   authError: string | null;
   clearAuthError: () => void;
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       },
       (error) => {
-        console.error('Auth state change error:', error);
+        console.warn('Auth state subscription warning:', error);
         setAuthError(error.message);
         setLoading(false);
       }
@@ -70,21 +70,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<boolean> => {
     try {
       setAuthError(null);
       setSyncStatus('syncing');
       await signInWithPopup(auth, googleProvider);
       setSyncStatus('synced');
       setLastSyncedAt(new Date());
+      return true;
     } catch (err: unknown) {
-      console.error('Google Sign-in failed:', err);
-      const message = err instanceof Error ? err.message : 'Google sign-in could not be completed';
-      // Suppress benign popup-closed errors
-      if (!message.includes('popup-closed-by-user')) {
-        setAuthError(message);
+      const errorObj = err as { code?: string; message?: string };
+      const code = errorObj?.code || '';
+      const message = errorObj?.message || (err instanceof Error ? err.message : '');
+
+      // Gracefully handle benign user-dismissed popup or cancelled request
+      const isUserCancellation =
+        code === 'auth/popup-closed-by-user' ||
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/user-cancelled' ||
+        message.includes('popup-closed-by-user') ||
+        message.includes('cancelled-popup-request');
+
+      if (isUserCancellation) {
+        // User closed the popup without choosing an account; reset status quietly
+        setSyncStatus(currentUser ? 'synced' : 'local-only');
+        return false;
       }
+
+      // Handle popup blocked by browser
+      if (code === 'auth/popup-blocked' || message.includes('popup-blocked')) {
+        console.warn('Google sign-in popup was blocked by browser.');
+        setAuthError('Pop-up window was blocked. Please allow pop-ups for this site and try again.');
+        setSyncStatus(currentUser ? 'synced' : 'local-only');
+        return false;
+      }
+
+      // Log other unexpected errors as a warning without breaking the applet
+      console.warn('Google sign-in notice:', message || err);
+      setAuthError('Sign-in could not be completed. Please check your network and try again.');
       setSyncStatus(currentUser ? 'synced' : 'local-only');
+      return false;
     }
   };
 
@@ -95,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSyncStatus('local-only');
       setLastSyncedAt(null);
     } catch (err) {
-      console.error('Sign-out failed:', err);
+      console.warn('Sign-out notice:', err);
     }
   };
 
