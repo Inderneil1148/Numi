@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActiveTab, TimeFilter, CurrencyConfig } from '../types/finance';
-import { Settings, Plus, CreditCard, Tag, ChartPie, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
+import { Settings, Plus, CreditCard, Tag, ChartPie, Cloud, CloudCheck, RefreshCw, LayoutGrid } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
 import { useAuth } from '../context/AuthContext';
 import { NumiLogo } from './NumiLogo';
@@ -14,6 +14,7 @@ interface HeaderProps {
   onTabChange?: (tab: ActiveTab) => void;
   onOpenAddModal?: () => void;
   onOpenAccount?: () => void;
+  onOpenWidgets?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onTabChange,
   onOpenAddModal,
   onOpenAccount,
+  onOpenWidgets,
 }) => {
   const { tap } = useHaptics();
   const { currentUser, syncStatus, isOnline } = useAuth();
@@ -117,8 +119,23 @@ export const Header: React.FC<HeaderProps> = ({
             </nav>
           )}
 
-          {/* Mobile Right Action Icons (Cloud Sync, New Transaction + Settings) */}
+          {/* Mobile Right Action Icons (Widgets, Cloud Sync, New Transaction + Settings) */}
           <div className="flex md:hidden items-center gap-1.5">
+            {onOpenWidgets && (
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  onOpenWidgets();
+                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#1D1D1F] dark:text-white bg-[#9EE42A]/20 dark:bg-[#9EE42A]/25 text-[#3F6212] dark:text-[#9EE42A] transition-all cursor-pointer active:scale-95"
+                title="Mobile Home Screen Widgets"
+                aria-label="Widgets"
+              >
+                <LayoutGrid size={16} strokeWidth={2.2} />
+              </button>
+            )}
+
             {onOpenAccount && (
               <button
                 type="button"
@@ -206,8 +223,23 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Desktop Right Actions: Cloud Sync, + Add Button & Settings */}
+          {/* Desktop Right Actions: Widgets, Cloud Sync, + Add Button & Settings */}
           <div className="hidden md:flex items-center gap-2">
+            {onOpenWidgets && (
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  onOpenWidgets();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#9EE42A]/15 hover:bg-[#9EE42A]/25 text-[#3F6212] dark:text-[#9EE42A] border border-[#9EE42A]/30 transition-all cursor-pointer active:scale-95 min-h-[32px]"
+                title="Mobile Home Screen Widgets & Shortcuts"
+              >
+                <LayoutGrid size={14} strokeWidth={2.2} />
+                <span>Widgets</span>
+              </button>
+            )}
+
             {onOpenAccount && (
               <button
                 type="button"

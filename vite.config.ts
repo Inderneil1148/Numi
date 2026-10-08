@@ -49,6 +49,29 @@ export default defineConfig(() => {
               purpose: 'maskable',
             },
           ],
+          shortcuts: [
+            {
+              name: 'Quick Add Expense',
+              short_name: 'Add Expense',
+              description: 'Quickly record an expense from home screen',
+              url: '/?action=quick-add',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Monthly Budget & Pulse',
+              short_name: 'Budget',
+              description: 'View current spending and remaining budget',
+              url: '/?view=insights',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Home Screen Widgets',
+              short_name: 'Widgets',
+              description: 'Open Home Screen Widgets Center',
+              url: '/?view=widgets',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+          ],
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],

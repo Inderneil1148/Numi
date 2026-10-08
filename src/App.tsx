@@ -43,6 +43,7 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { TransactionModal } from './components/TransactionModal';
 import { SettingsModal } from './components/SettingsModal';
 import { AccountModal } from './components/AccountModal';
+import { WidgetsModal } from './components/WidgetsModal';
 import { DownloadBanner } from './components/DownloadBanner';
 
 export default function App() {
@@ -175,7 +176,35 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWidgetsOpen, setIsWidgetsOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Listen for Home Screen Widgets and PWA Shortcut actions (e.g. /?action=quick-add)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get('action');
+      const view = params.get('view');
+
+      if (action === 'quick-add' || action === 'add') {
+        setEditingTx(null);
+        setIsModalOpen(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (view === 'widgets') {
+        setIsWidgetsOpen(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (view === 'insights' || view === 'analytics') {
+        setActiveTab('analytics');
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (view === 'ledger') {
+        setActiveTab('ledger');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch {
+      // Safe fallback if URLSearchParams is unavailable
+    }
+  }, []);
 
   // Filter transactions by timeFilter
   const timeFilteredTransactions = useMemo(() => {
@@ -462,6 +491,10 @@ export default function App() {
             tap('light');
             setIsAccountOpen(true);
           }}
+          onOpenWidgets={() => {
+            tap('light');
+            setIsWidgetsOpen(true);
+          }}
         />
 
         {/* Main Tab Content (Responsive padding and spacing across all devices) */}
@@ -599,6 +632,10 @@ export default function App() {
             tap('light');
             setIsAccountOpen(true);
           }}
+          onOpenWidgetsModal={() => {
+            tap('light');
+            setIsWidgetsOpen(true);
+          }}
         />
 
         {/* Multi-Device Cloud Sync & Account Modal */}
@@ -608,6 +645,19 @@ export default function App() {
           transactionCount={transactions.length}
           tagCount={tags.length}
           onForceSync={handleForceSync}
+        />
+
+        {/* Mobile Home Screen Widgets Modal */}
+        <WidgetsModal
+          isOpen={isWidgetsOpen}
+          onClose={() => setIsWidgetsOpen(false)}
+          transactions={transactions}
+          budget={budget}
+          currency={currency}
+          onOpenAddModal={() => {
+            setEditingTx(null);
+            setIsModalOpen(true);
+          }}
         />
 
         {/* Global Toast Notification */}

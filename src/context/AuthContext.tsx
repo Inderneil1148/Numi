@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import {
+  User,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local-only';
@@ -10,6 +17,8 @@ interface AuthContextType {
   syncStatus: SyncStatus;
   setSyncStatus: (status: SyncStatus) => void;
   signInWithGoogle: () => Promise<boolean>;
+  signInWithEmail: (email: string, pass: string) => Promise<boolean>;
+  signUpWithEmail: (email: string, pass: string) => Promise<boolean>;
   signOutUser: () => Promise<void>;
   authError: string | null;
   clearAuthError: () => void;
@@ -157,6 +166,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithEmail = async (email: string, pass: string): Promise<boolean> => {
+    try {
+      setAuthError(null);
+      setSyncStatus('syncing');
+      await signInWithEmailAndPassword(auth, email.trim(), pass);
+      setSyncStatus('synced');
+      setLastSyncedAt(new Date());
+      return true;
+    } catch (err: unknown) {
+      const errorObj = err as { code?: string; message?: string };
+      const code = errorObj?.code || '';
+      const message = errorObj?.message || (err instanceof Error ? err.message : String(err));
+
+      if (code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed')) {
+        setAuthError(
+          'Email/Password sign-in is not enabled yet in your Firebase console. Please enable the Email/Password provider under Firebase Console > Authentication > Sign-in method.'
+        );
+      } else if (
+        code === 'auth/invalid-credential' ||
+        code === 'auth/user-not-found' ||
+        code === 'auth/wrong-password' ||
+        message.includes('invalid-credential')
+      ) {
+        setAuthError('Incorrect email or password. Please verify your credentials.');
+      } else if (code === 'auth/invalid-email' || message.includes('invalid-email')) {
+        setAuthError('Invalid email format. Please enter a valid email address.');
+      } else if (code === 'auth/too-many-requests' || message.includes('too-many-requests')) {
+        setAuthError('Too many failed sign-in attempts. Please wait a few moments and try again.');
+      } else if (code === 'auth/network-request-failed' || message.includes('network-request-failed')) {
+        setAuthError('Network error connecting to Firebase. Please check your internet connection.');
+      } else {
+        console.warn('Email sign-in notice:', message || err);
+        let clean = message.replace(/^Firebase:\s*Error\s*\((.*?)\)\.?/i, '$1').trim();
+        setAuthError(clean || 'Could not sign in with email. Please try again.');
+      }
+      setSyncStatus(currentUser ? 'synced' : 'local-only');
+      return false;
+    }
+  };
+
+  const signUpWithEmail = async (email: string, pass: string): Promise<boolean> => {
+    try {
+      setAuthError(null);
+      setSyncStatus('syncing');
+      await createUserWithEmailAndPassword(auth, email.trim(), pass);
+      setSyncStatus('synced');
+      setLastSyncedAt(new Date());
+      return true;
+    } catch (err: unknown) {
+      const errorObj = err as { code?: string; message?: string };
+      const code = errorObj?.code || '';
+      const message = errorObj?.message || (err instanceof Error ? err.message : String(err));
+
+      if (code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed')) {
+        setAuthError(
+          'Email/Password sign-in is not enabled yet in your Firebase console. Please enable the Email/Password provider under Firebase Console > Authentication > Sign-in method.'
+        );
+      } else if (code === 'auth/email-already-in-use' || message.includes('email-already-in-use')) {
+        setAuthError('This email is already registered. Please sign in instead.');
+      } else if (code === 'auth/weak-password' || message.includes('weak-password')) {
+        setAuthError('Password is too weak. Please use at least 6 characters.');
+      } else if (code === 'auth/invalid-email' || message.includes('invalid-email')) {
+        setAuthError('Invalid email format. Please enter a valid email address.');
+      } else if (code === 'auth/network-request-failed' || message.includes('network-request-failed')) {
+        setAuthError('Network error connecting to Firebase. Please check your internet connection.');
+      } else {
+        console.warn('Email sign-up notice:', message || err);
+        let clean = message.replace(/^Firebase:\s*Error\s*\((.*?)\)\.?/i, '$1').trim();
+        setAuthError(clean || 'Could not create account with email. Please try again.');
+      }
+      setSyncStatus(currentUser ? 'synced' : 'local-only');
+      return false;
+    }
+  };
+
   const signOutUser = async () => {
     try {
       await signOut(auth);
@@ -177,6 +261,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       syncStatus,
       setSyncStatus,
       signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
       signOutUser,
       authError,
       clearAuthError,

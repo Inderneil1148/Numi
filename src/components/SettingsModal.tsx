@@ -19,6 +19,7 @@ import {
   CloudCheck,
   Smartphone,
   ChevronRight,
+  LayoutGrid,
 } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +41,7 @@ interface SettingsModalProps {
   theme: ThemeMode;
   onUpdateTheme: (theme: ThemeMode) => void;
   onOpenAccountModal?: () => void;
+  onOpenWidgetsModal?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -58,6 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   theme,
   onUpdateTheme,
   onOpenAccountModal,
+  onOpenWidgetsModal,
 }) => {
   const { tap, success, warning } = useHaptics();
   const { currentUser, syncStatus } = useAuth();
@@ -228,6 +231,52 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-[#007AFF] dark:text-[#0A84FF]">
                   <span>{currentUser ? 'Manage' : 'Sign In'}</span>
+                  <ChevronRight size={16} className="text-[#8E8E93]" />
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Home Screen Widgets */}
+          <div className="space-y-1.5">
+            <span className="text-[12px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider px-3 flex items-center gap-1.5">
+              <LayoutGrid size={13} />
+              <span>Mobile Home Screen Widgets</span>
+            </span>
+
+            <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-black/[0.04] dark:border-white/[0.08] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  if (onOpenWidgetsModal) {
+                    onClose();
+                    onOpenWidgetsModal();
+                  }
+                }}
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#9EE42A]/20 text-[#3F6212] dark:text-[#9EE42A] flex items-center justify-center">
+                    <LayoutGrid size={19} strokeWidth={2.2} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white leading-tight">
+                        Home Screen Widgets & Shortcuts
+                      </p>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#007AFF]/15 text-[#007AFF] dark:text-[#0A84FF]">
+                        New
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#8E8E93] leading-normal">
+                      Add 2x2 Quick-Add, 4x2 Budget & Lock Screen widgets to phone
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#007AFF] dark:text-[#0A84FF]">
+                  <span>Setup</span>
                   <ChevronRight size={16} className="text-[#8E8E93]" />
                 </div>
               </button>
@@ -519,7 +568,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </p>
             <div className="mt-3 flex items-center gap-2">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#E5E5EA] text-[#636366] dark:bg-[#2C2C2E] dark:text-[#8E8E93]">
-                v1.0.0
+                v2.0.0
               </span>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#9EE42A]/20 text-[#3F6212] dark:text-[#9EE42A] border border-[#9EE42A]/30">
                 Official Release
