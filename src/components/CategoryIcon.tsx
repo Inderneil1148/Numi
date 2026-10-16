@@ -14,6 +14,10 @@ import {
   Folder,
   Tag,
   CreditCard,
+  PiggyBank,
+  Repeat,
+  Sparkles,
+  Calendar,
 } from 'lucide-react';
 
 interface CategoryIconProps {
@@ -55,6 +59,14 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
       return <Folder size={size} strokeWidth={strokeWidth} className={className} />;
     case 'Tag':
       return <Tag size={size} strokeWidth={strokeWidth} className={className} />;
+    case 'PiggyBank':
+      return <PiggyBank size={size} strokeWidth={strokeWidth} className={className} />;
+    case 'Repeat':
+      return <Repeat size={size} strokeWidth={strokeWidth} className={className} />;
+    case 'Sparkles':
+      return <Sparkles size={size} strokeWidth={strokeWidth} className={className} />;
+    case 'Calendar':
+      return <Calendar size={size} strokeWidth={strokeWidth} className={className} />;
     default:
       return <CreditCard size={size} strokeWidth={strokeWidth} className={className} />;
   }

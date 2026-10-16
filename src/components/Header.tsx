@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActiveTab, TimeFilter, CurrencyConfig } from '../types/finance';
-import { Settings, Plus, CreditCard, Tag, ChartPie, Cloud, CloudCheck, RefreshCw, LayoutGrid } from 'lucide-react';
+import { Settings, Plus, CreditCard, Tag, ChartPie, Cloud, CloudCheck, RefreshCw, LayoutGrid, Repeat } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
 import { useAuth } from '../context/AuthContext';
 import { NumiLogo } from './NumiLogo';
@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenAddModal?: () => void;
   onOpenAccount?: () => void;
   onOpenWidgets?: () => void;
+  hasDueSubscriptions?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAddModal,
   onOpenAccount,
   onOpenWidgets,
+  hasDueSubscriptions = false,
 }) => {
   const { tap } = useHaptics();
   const { currentUser, syncStatus, isOnline } = useAuth();
@@ -91,6 +93,23 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <CreditCard size={15} strokeWidth={2} />
                 <span>Wallet</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabClick('subscriptions')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all min-h-[30px] cursor-pointer relative ${
+                  activeTab === 'subscriptions'
+                    ? 'bg-white text-[#5856D6] dark:text-[#D1A4FF] font-bold shadow-[0_2px_6px_rgba(0,0,0,0.1)] dark:bg-[#2C2C2E] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)]'
+                    : 'text-[#636366] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white'
+                }`}
+              >
+                <div className="relative">
+                  <Repeat size={15} strokeWidth={2} />
+                  {hasDueSubscriptions && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#FF3B30] ring-2 ring-white dark:ring-[#1C1C1E]" />
+                  )}
+                </div>
+                <span>Subscriptions</span>
               </button>
               <button
                 type="button"

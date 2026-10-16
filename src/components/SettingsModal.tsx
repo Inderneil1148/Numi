@@ -42,6 +42,7 @@ interface SettingsModalProps {
   onUpdateTheme: (theme: ThemeMode) => void;
   onOpenAccountModal?: () => void;
   onOpenWidgetsModal?: () => void;
+  onReplaySplash?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -61,6 +62,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onUpdateTheme,
   onOpenAccountModal,
   onOpenWidgetsModal,
+  onReplaySplash,
 }) => {
   const { tap, success, warning } = useHaptics();
   const { currentUser, syncStatus } = useAuth();
@@ -574,6 +576,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 Official Release
               </span>
             </div>
+
+            {onReplaySplash && (
+              <button
+                type="button"
+                onClick={() => {
+                  tap('light');
+                  onClose();
+                  onReplaySplash();
+                }}
+                className="mt-3.5 text-xs font-semibold text-[#007AFF] dark:text-[#0A84FF] hover:underline flex items-center gap-1.5 cursor-pointer py-1.5 px-3.5 rounded-full bg-[#007AFF]/10 dark:bg-[#0A84FF]/15 active:scale-95 transition-all"
+              >
+                <span>Preview Splash Screen</span>
+                <span className="text-[10px]">✨</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

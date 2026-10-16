@@ -47,9 +47,9 @@ service cloud.firestore {
       return data.userId == userId &&
         data.userId == request.auth.uid &&
         data.keys().hasAll(['id', 'userId', 'type', 'amount', 'title', 'category', 'customTags', 'date', 'createdAt']) &&
-        data.keys().hasOnly(['id', 'userId', 'type', 'amount', 'title', 'category', 'customTags', 'date', 'time', 'note', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'userId', 'type', 'amount', 'title', 'category', 'customTags', 'date', 'time', 'note', 'createdAt', 'savingsGoalId', 'subscriptionId', 'isSubscription']) &&
         data.id is string && data.id.size() <= 128 &&
-        data.type in ['expense', 'income'] &&
+        data.type in ['expense', 'income', 'savings'] &&
         data.amount is number && data.amount >= 0 &&
         data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
         data.category is string && data.category.size() > 0 && data.category.size() <= 60 &&
@@ -57,6 +57,9 @@ service cloud.firestore {
         data.date is string && data.date.size() <= 20 &&
         (!('time' in data) || (data.time is string && data.time.size() <= 10)) &&
         (!('note' in data) || (data.note is string && data.note.size() <= 500)) &&
+        (!('savingsGoalId' in data) || (data.savingsGoalId is string && data.savingsGoalId.size() <= 128)) &&
+        (!('subscriptionId' in data) || (data.subscriptionId is string && data.subscriptionId.size() <= 128)) &&
+        (!('isSubscription' in data) || data.isSubscription is bool) &&
         data.createdAt is number;
     }
 
@@ -68,6 +71,38 @@ service cloud.firestore {
         data.id is string && data.id.size() <= 128 &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
         data.color is string && data.color.size() <= 30 &&
+        data.createdAt is number;
+    }
+
+    function isValidSavingsGoal(data, userId) {
+      return data.userId == userId &&
+        data.userId == request.auth.uid &&
+        data.keys().hasAll(['id', 'userId', 'name', 'targetAmount', 'currentAmount', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'userId', 'name', 'targetAmount', 'currentAmount', 'targetDate', 'color', 'note', 'createdAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.targetAmount is number && data.targetAmount >= 0 &&
+        data.currentAmount is number && data.currentAmount >= 0 &&
+        (!('targetDate' in data) || (data.targetDate is string && data.targetDate.size() <= 20)) &&
+        (!('color' in data) || (data.color is string && data.color.size() <= 30)) &&
+        (!('note' in data) || (data.note is string && data.note.size() <= 500)) &&
+        data.createdAt is number;
+    }
+
+    function isValidSubscription(data, userId) {
+      return data.userId == userId &&
+        data.userId == request.auth.uid &&
+        data.keys().hasAll(['id', 'userId', 'name', 'amount', 'category', 'billingDay', 'status', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'userId', 'name', 'amount', 'category', 'billingDay', 'status', 'lastLoggedDate', 'reminderDismissedMonth', 'note', 'createdAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.amount is number && data.amount >= 0 &&
+        data.category is string && data.category.size() <= 60 &&
+        data.billingDay is number && data.billingDay >= 1 && data.billingDay <= 31 &&
+        data.status in ['active', 'paused'] &&
+        (!('lastLoggedDate' in data) || (data.lastLoggedDate is string && data.lastLoggedDate.size() <= 20)) &&
+        (!('reminderDismissedMonth' in data) || (data.reminderDismissedMonth is string && data.reminderDismissedMonth.size() <= 10)) &&
+        (!('note' in data) || (data.note is string && data.note.size() <= 500)) &&
         data.createdAt is number;
     }
 
@@ -103,6 +138,32 @@ service cloud.firestore {
           incoming().userId == existing().userId &&
           incoming().createdAt == existing().createdAt;
         allow delete: if isOwner(userId) && isValidId(userId) && isValidId(tagId);
+      }
+
+      // User savings goals subcollection
+      match /savingsGoals/{goalId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(goalId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(goalId) && isValidSavingsGoal(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(goalId) &&
+          isValidSavingsGoal(incoming(), userId) &&
+          incoming().id == existing().id &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(goalId);
+      }
+
+      // User recurring subscriptions subcollection
+      match /subscriptions/{subscriptionId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(subscriptionId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(subscriptionId) && isValidSubscription(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(subscriptionId) &&
+          isValidSubscription(incoming(), userId) &&
+          incoming().id == existing().id &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(subscriptionId);
       }
     }
   }

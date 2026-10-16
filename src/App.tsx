@@ -6,6 +6,9 @@ import {
   BudgetConfig,
   ActiveTab,
   TimeFilter,
+  SavingsGoal,
+  Subscription,
+  TransactionType,
 } from './types/finance';
 import {
   loadStoredTransactions,
@@ -16,6 +19,10 @@ import {
   saveStoredCurrency,
   loadStoredBudget,
   saveStoredBudget,
+  loadStoredSavingsGoals,
+  saveStoredSavingsGoals,
+  loadStoredSubscriptions,
+  saveStoredSubscriptions,
   clearAllTransactionsAndData,
 } from './utils/storage';
 import { DEFAULT_CATEGORIES, DEFAULT_TAGS, TAG_COLOR_PALETTE } from './utils/constants';
@@ -26,10 +33,16 @@ import {
   subscribeUserTransactions,
   subscribeUserTags,
   subscribeUserSettings,
+  subscribeUserSavingsGoals,
+  subscribeUserSubscriptions,
   saveTransactionToCloud,
   deleteTransactionFromCloud,
   saveTagToCloud,
   deleteTagFromCloud,
+  saveSavingsGoalToCloud,
+  deleteSavingsGoalFromCloud,
+  saveSubscriptionToCloud,
+  deleteSubscriptionFromCloud,
   saveUserSettingsToCloud,
   syncInitialLocalDataToCloud,
 } from './services/firestoreSync';
@@ -45,6 +58,14 @@ import { SettingsModal } from './components/SettingsModal';
 import { AccountModal } from './components/AccountModal';
 import { WidgetsModal } from './components/WidgetsModal';
 import { DownloadBanner } from './components/DownloadBanner';
+import { SplashPage } from './components/SplashPage';
+import { Footer } from './components/Footer';
+import { SavingsGoalsCard } from './components/SavingsGoalsCard';
+import { SavingsGoalModal } from './components/SavingsGoalModal';
+import { SubscriptionsView } from './components/SubscriptionsView';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { SubscriptionDueBanner } from './components/SubscriptionDueBanner';
+import { getTodayDateString } from './utils/formatters';
 
 export default function App() {
   const { tap, success, warning } = useHaptics();
@@ -56,22 +77,34 @@ export default function App() {
   const [tags, setTags] = useState<CustomTag[]>(loadStoredTags);
   const [currency, setCurrency] = useState<CurrencyConfig>(loadStoredCurrency);
   const [budget, setBudget] = useState<BudgetConfig>(loadStoredBudget);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(loadStoredSavingsGoals);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>(loadStoredSubscriptions);
 
   // Cloud Account & Multi-Device Modal State
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+
+  // Splash Screen Animation State (displayed on app open)
+  const [showSplash, setShowSplash] = useState(true);
 
   // Real-time Cloud Database Synchronization across devices
   useEffect(() => {
     if (!currentUser) return;
 
     // 1. Initial migration: if user is logged in and cloud is empty but local has items
-    syncInitialLocalDataToCloud(currentUser.uid, transactions, tags, {
-      currency,
-      budget,
-      theme,
-      email: currentUser.email || undefined,
-      displayName: currentUser.displayName || undefined,
-    })
+    syncInitialLocalDataToCloud(
+      currentUser.uid,
+      transactions,
+      tags,
+      {
+        currency,
+        budget,
+        theme,
+        email: currentUser.email || undefined,
+        displayName: currentUser.displayName || undefined,
+      },
+      savingsGoals,
+      subscriptions
+    )
       .then(({ migratedCount }) => {
         if (migratedCount > 0) {
           setToastMessage(`✓ Synced ${migratedCount} transactions to your cloud database.`);
@@ -108,7 +141,35 @@ export default function App() {
       }
     );
 
-    // 4. Real-time user profile & settings listener
+    // 4. Real-time savings goals listener
+    const unsubscribeGoals = subscribeUserSavingsGoals(
+      currentUser.uid,
+      (cloudGoals) => {
+        if (cloudGoals && cloudGoals.length > 0) {
+          setSavingsGoals(cloudGoals);
+          saveStoredSavingsGoals(cloudGoals);
+        }
+      },
+      (err) => {
+        console.warn('Savings goals sync notice:', err);
+      }
+    );
+
+    // 5. Real-time subscriptions listener
+    const unsubscribeSubs = subscribeUserSubscriptions(
+      currentUser.uid,
+      (cloudSubs) => {
+        if (cloudSubs && cloudSubs.length > 0) {
+          setSubscriptions(cloudSubs);
+          saveStoredSubscriptions(cloudSubs);
+        }
+      },
+      (err) => {
+        console.warn('Subscriptions sync notice:', err);
+      }
+    );
+
+    // 6. Real-time user profile & settings listener
     const unsubscribeSettings = subscribeUserSettings(
       currentUser.uid,
       (cloudSettings) => {
@@ -120,14 +181,11 @@ export default function App() {
           setBudget(cloudSettings.budget);
           saveStoredBudget(cloudSettings.budget);
         }
-        if (
-          cloudSettings.theme &&
-          (cloudSettings.theme === 'light' ||
-            cloudSettings.theme === 'dark' ||
-            cloudSettings.theme === 'system')
-        ) {
+        if (cloudSettings.theme) {
           setTheme(cloudSettings.theme);
         }
+        setSyncStatus('synced');
+        setLastSyncedAt(new Date());
       },
       (err) => {
         console.warn('Settings sync notice:', err);
@@ -137,62 +195,71 @@ export default function App() {
     return () => {
       unsubscribeTx();
       unsubscribeTags();
+      unsubscribeGoals();
+      unsubscribeSubs();
       unsubscribeSettings();
     };
   }, [currentUser]);
 
-  // Top Download Banner State
-  const [showDownloadBanner, setShowDownloadBanner] = useState<boolean>(() => {
-    return localStorage.getItem('numi_download_banner_hidden') !== 'true';
-  });
-
-  const handleToggleDownloadBanner = (show: boolean) => {
-    setShowDownloadBanner(show);
-    if (show) {
-      localStorage.removeItem('numi_download_banner_hidden');
-    } else {
-      localStorage.setItem('numi_download_banner_hidden', 'true');
-    }
-  };
-
-  // View States
+  // UI View & Filter States
   const [activeTab, setActiveTab] = useState<ActiveTab>('ledger');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('this-month');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'expense' | 'income'>('all');
-
-  const handleTabChange = (tab: ActiveTab) => {
-    tap('light');
-    setActiveTab(tab);
-  };
-
-  const handleTimeFilterChange = (tf: TimeFilter) => {
-    tap('light');
-    setTimeFilter(tf);
-  };
+  const [typeFilter, setTypeFilter] = useState<'all' | 'expense' | 'income' | 'savings'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [initialTxType, setInitialTxType] = useState<TransactionType>('expense');
+  const [initialSavingsGoalId, setInitialSavingsGoalId] = useState<string>('');
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWidgetsOpen, setIsWidgetsOpen] = useState(false);
+  const [isSavingsGoalModalOpen, setIsSavingsGoalModalOpen] = useState(false);
+  const [editingSavingsGoal, setEditingSavingsGoal] = useState<SavingsGoal | null>(null);
+
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Listen for Home Screen Widgets and PWA Shortcut actions (e.g. /?action=quick-add)
+  // Download Smart Banner state
+  const [showDownloadBanner, setShowDownloadBanner] = useState(() => {
+    return localStorage.getItem('numi_hide_download_banner') !== 'true';
+  });
+
+  const handleToggleDownloadBanner = (show: boolean) => {
+    setShowDownloadBanner(show);
+    if (!show) {
+      localStorage.setItem('numi_hide_download_banner', 'true');
+    } else {
+      localStorage.removeItem('numi_hide_download_banner');
+    }
+  };
+
+  // Deep-linking support
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     try {
       const params = new URLSearchParams(window.location.search);
       const action = params.get('action');
       const view = params.get('view');
 
-      if (action === 'quick-add' || action === 'add') {
+      if (action === 'new') {
         setEditingTx(null);
+        setInitialTxType('expense');
+        setIsModalOpen(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (action === 'savings') {
+        setEditingTx(null);
+        setInitialTxType('savings');
         setIsModalOpen(true);
         window.history.replaceState({}, '', window.location.pathname);
       } else if (view === 'widgets') {
         setIsWidgetsOpen(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (view === 'subscriptions') {
+        setActiveTab('subscriptions');
         window.history.replaceState({}, '', window.location.pathname);
       } else if (view === 'insights' || view === 'analytics') {
         setActiveTab('analytics');
@@ -202,7 +269,7 @@ export default function App() {
         window.history.replaceState({}, '', window.location.pathname);
       }
     } catch {
-      // Safe fallback if URLSearchParams is unavailable
+      // Safe fallback
     }
   }, []);
 
@@ -238,7 +305,7 @@ export default function App() {
     timeFilteredTransactions.forEach((tx) => {
       if (tx.type === 'income') {
         inc += tx.amount;
-      } else {
+      } else if (tx.type === 'expense') {
         exp += tx.amount;
       }
     });
@@ -258,13 +325,26 @@ export default function App() {
     return counts;
   }, [timeFilteredTransactions]);
 
-  // Data Actions with Cloud Sync
+  // Check if any active subscription is due this month
+  const hasDueSubscriptions = useMemo(() => {
+    const now = new Date();
+    const currentDay = now.getDate();
+    const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return subscriptions.some((sub) => {
+      if (sub.status !== 'active') return false;
+      if (sub.reminderDismissedMonth === currentMonthYear) return false;
+      if (sub.lastLoggedDate && sub.lastLoggedDate.startsWith(currentMonthYear)) return false;
+      return sub.billingDay <= currentDay;
+    });
+  }, [subscriptions]);
+
+  // Save transaction handler with Savings Goal accumulation
   const handleSaveTransaction = (
     txData: Omit<Transaction, 'id' | 'createdAt'> & { id?: string }
   ) => {
     success();
     if (txData.id) {
-      // Update
+      // Update existing
       const updated = transactions.map((t) =>
         t.id === txData.id
           ? {
@@ -296,7 +376,10 @@ export default function App() {
         amount: txData.amount,
         title: txData.title,
         category: txData.category,
-        customTags: txData.customTags || [],
+        customTags: txData.type === 'savings' ? [] : txData.customTags || [],
+        savingsGoalId: txData.type === 'savings' ? txData.savingsGoalId : undefined,
+        isSubscription: txData.isSubscription,
+        subscriptionId: txData.subscriptionId,
         date: txData.date,
         time: new Date().toLocaleTimeString([], {
           hour: '2-digit',
@@ -319,6 +402,42 @@ export default function App() {
           })
           .catch((err) => console.warn('Cloud save notice:', err));
       }
+
+      // If this is a Savings transaction with a designated goal, increment the goal's currentAmount
+      if (txData.type === 'savings' && txData.savingsGoalId) {
+        const goal = savingsGoals.find((g) => g.id === txData.savingsGoalId);
+        if (goal) {
+          const updatedGoal: SavingsGoal = {
+            ...goal,
+            currentAmount: goal.currentAmount + txData.amount,
+          };
+          const updatedGoals = savingsGoals.map((g) => (g.id === updatedGoal.id ? updatedGoal : g));
+          setSavingsGoals(updatedGoals);
+          saveStoredSavingsGoals(updatedGoals);
+          if (currentUser) {
+            saveSavingsGoalToCloud(currentUser.uid, updatedGoal).catch((err) => console.warn(err));
+          }
+          setToastMessage(`✓ Added to ${goal.name}: +${currency.symbol}${txData.amount}`);
+          setTimeout(() => setToastMessage(null), 3000);
+        }
+      }
+
+      // If linked to a subscription, update lastLoggedDate
+      if (txData.subscriptionId) {
+        const sub = subscriptions.find((s) => s.id === txData.subscriptionId);
+        if (sub) {
+          const updatedSub: Subscription = {
+            ...sub,
+            lastLoggedDate: txData.date,
+          };
+          const updatedSubs = subscriptions.map((s) => (s.id === updatedSub.id ? updatedSub : s));
+          setSubscriptions(updatedSubs);
+          saveStoredSubscriptions(updatedSubs);
+          if (currentUser) {
+            saveSubscriptionToCloud(currentUser.uid, updatedSub).catch((err) => console.warn(err));
+          }
+        }
+      }
     }
   };
 
@@ -339,14 +458,195 @@ export default function App() {
     }
   };
 
+  // Savings Goal Handlers
+  const handleSaveSavingsGoal = (goalData: Omit<SavingsGoal, 'id' | 'createdAt'> & { id?: string }) => {
+    success();
+    if (goalData.id) {
+      const updated = savingsGoals.map((g) =>
+        g.id === goalData.id
+          ? {
+              ...g,
+              ...goalData,
+              id: goalData.id,
+              createdAt: g.createdAt,
+            }
+          : g
+      );
+      setSavingsGoals(updated);
+      saveStoredSavingsGoals(updated);
+      const updatedGoal = updated.find((g) => g.id === goalData.id);
+      if (currentUser && updatedGoal) {
+        saveSavingsGoalToCloud(currentUser.uid, updatedGoal).catch((err) => console.warn(err));
+      }
+    } else {
+      const newGoal: SavingsGoal = {
+        id: `goal-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        name: goalData.name,
+        targetAmount: goalData.targetAmount,
+        currentAmount: goalData.currentAmount,
+        targetDate: goalData.targetDate,
+        color: goalData.color || '#9EE42A',
+        note: goalData.note,
+        createdAt: Date.now(),
+      };
+      const updated = [newGoal, ...savingsGoals];
+      setSavingsGoals(updated);
+      saveStoredSavingsGoals(updated);
+      if (currentUser) {
+        saveSavingsGoalToCloud(currentUser.uid, newGoal).catch((err) => console.warn(err));
+      }
+    }
+  };
+
+  const handleDeleteSavingsGoal = (goalId: string) => {
+    warning();
+    const updated = savingsGoals.filter((g) => g.id !== goalId);
+    setSavingsGoals(updated);
+    saveStoredSavingsGoals(updated);
+    if (currentUser) {
+      deleteSavingsGoalFromCloud(currentUser.uid, goalId).catch((err) => console.warn(err));
+    }
+  };
+
+  // Subscription Handlers
+  const handleSaveSubscription = (subData: Omit<Subscription, 'id' | 'createdAt'> & { id?: string }) => {
+    success();
+    if (subData.id) {
+      const updated = subscriptions.map((s) =>
+        s.id === subData.id
+          ? {
+              ...s,
+              ...subData,
+              id: subData.id,
+              createdAt: s.createdAt,
+            }
+          : s
+      );
+      setSubscriptions(updated);
+      saveStoredSubscriptions(updated);
+      const updatedSub = updated.find((s) => s.id === subData.id);
+      if (currentUser && updatedSub) {
+        saveSubscriptionToCloud(currentUser.uid, updatedSub).catch((err) => console.warn(err));
+      }
+    } else {
+      const newSub: Subscription = {
+        id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        name: subData.name,
+        amount: subData.amount,
+        category: subData.category,
+        billingDay: subData.billingDay,
+        status: subData.status,
+        note: subData.note,
+        createdAt: Date.now(),
+      };
+      const updated = [newSub, ...subscriptions];
+      setSubscriptions(updated);
+      saveStoredSubscriptions(updated);
+      if (currentUser) {
+        saveSubscriptionToCloud(currentUser.uid, newSub).catch((err) => console.warn(err));
+      }
+    }
+  };
+
+  const handleDeleteSubscription = (subId: string) => {
+    warning();
+    const updated = subscriptions.filter((s) => s.id !== subId);
+    setSubscriptions(updated);
+    saveStoredSubscriptions(updated);
+    if (currentUser) {
+      deleteSubscriptionFromCloud(currentUser.uid, subId).catch((err) => console.warn(err));
+    }
+  };
+
+  const handleToggleSubscriptionStatus = (subId: string) => {
+    tap('light');
+    const updated = subscriptions.map((s) =>
+      s.id === subId ? { ...s, status: s.status === 'active' ? ('paused' as const) : ('active' as const) } : s
+    );
+    setSubscriptions(updated);
+    saveStoredSubscriptions(updated);
+    const updatedSub = updated.find((s) => s.id === subId);
+    if (currentUser && updatedSub) {
+      saveSubscriptionToCloud(currentUser.uid, updatedSub).catch((err) => console.warn(err));
+    }
+  };
+
+  // Actionable One-Tap Reminder: Log Payment for recurring subscription
+  const handleLogSubscriptionPayment = (sub: Subscription) => {
+    success();
+    const today = getTodayDateString();
+    const newTx: Transaction = {
+      id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      type: 'expense',
+      amount: sub.amount,
+      title: sub.name,
+      category: sub.category,
+      customTags: [],
+      isSubscription: true,
+      subscriptionId: sub.id,
+      date: today,
+      time: new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }),
+      note: `Recurring monthly subscription payment`,
+      createdAt: Date.now(),
+    };
+
+    const updatedTxList = [newTx, ...transactions];
+    setTransactions(updatedTxList);
+    saveTransactions(updatedTxList);
+
+    // Update subscription lastLoggedDate
+    const updatedSub: Subscription = {
+      ...sub,
+      lastLoggedDate: today,
+    };
+    const updatedSubs = subscriptions.map((s) => (s.id === sub.id ? updatedSub : s));
+    setSubscriptions(updatedSubs);
+    saveStoredSubscriptions(updatedSubs);
+
+    if (currentUser) {
+      setSyncStatus('syncing');
+      Promise.all([
+        saveTransactionToCloud(currentUser.uid, newTx),
+        saveSubscriptionToCloud(currentUser.uid, updatedSub),
+      ])
+        .then(() => {
+          setSyncStatus('synced');
+          setLastSyncedAt(new Date());
+        })
+        .catch((err) => console.warn('Cloud subscription log notice:', err));
+    }
+
+    setToastMessage(`✓ Logged payment for ${sub.name} (${currency.symbol}${sub.amount})`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleDismissSubscriptionReminder = (subId: string) => {
+    tap('light');
+    const now = new Date();
+    const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const updatedSubs = subscriptions.map((s) =>
+      s.id === subId ? { ...s, reminderDismissedMonth: currentMonthYear } : s
+    );
+    setSubscriptions(updatedSubs);
+    saveStoredSubscriptions(updatedSubs);
+    const updatedSub = updatedSubs.find((s) => s.id === subId);
+    if (currentUser && updatedSub) {
+      saveSubscriptionToCloud(currentUser.uid, updatedSub).catch((err) => console.warn(err));
+    }
+  };
+
+  // Tag Handlers
   const handleCreateTag = (name: string, color?: string): CustomTag => {
-    const clean = name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-    const existing = tags.find((t) => t.name === clean);
+    const existing = tags.find((t) => t.name.toLowerCase() === name.toLowerCase());
     if (existing) return existing;
 
     const newTag: CustomTag = {
-      id: `tag-${Date.now()}`,
-      name: clean,
+      id: `tag-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name,
       color: color || TAG_COLOR_PALETTE[Math.floor(Math.random() * TAG_COLOR_PALETTE.length)].hex,
       createdAt: Date.now(),
     };
@@ -355,113 +655,108 @@ export default function App() {
     saveStoredTags(updated);
 
     if (currentUser) {
-      saveTagToCloud(currentUser.uid, newTag).catch((err) =>
-        console.warn('Cloud tag save notice:', err)
-      );
+      saveTagToCloud(currentUser.uid, newTag).catch((err) => console.warn('Cloud tag save notice:', err));
     }
     return newTag;
   };
 
-  const handleUpdateTag = (id: string, newName: string, newColor: string) => {
-    const oldTag = tags.find((t) => t.id === id);
-    if (!oldTag) return;
-
-    const updatedTags = tags.map((t) =>
-      t.id === id ? { ...t, name: newName, color: newColor } : t
-    );
-    setTags(updatedTags);
-    saveStoredTags(updatedTags);
-
-    const updatedCurrentTag = updatedTags.find((t) => t.id === id);
-    if (currentUser && updatedCurrentTag) {
-      saveTagToCloud(currentUser.uid, updatedCurrentTag).catch((err) => console.warn(err));
-    }
-
-    if (oldTag.name !== newName) {
-      const updatedTx = transactions.map((tx) => {
-        if (tx.customTags && tx.customTags.includes(oldTag.name)) {
-          const modTx = {
-            ...tx,
-            customTags: tx.customTags.map((tg) => (tg === oldTag.name ? newName : tg)),
-          };
-          if (currentUser) {
-            saveTransactionToCloud(currentUser.uid, modTx).catch((err) => console.warn(err));
-          }
-          return modTx;
-        }
-        return tx;
-      });
-      setTransactions(updatedTx);
-      saveTransactions(updatedTx);
-
-      if (selectedTag === oldTag.name) {
-        setSelectedTag(newName);
-      }
+  const handleUpdateTag = (id: string, name: string, color: string) => {
+    const existing = tags.find((t) => t.id === id);
+    const updatedTag: CustomTag = {
+      id,
+      name,
+      color,
+      createdAt: existing ? existing.createdAt : Date.now(),
+    };
+    const updated = tags.map((t) => (t.id === id ? updatedTag : t));
+    setTags(updated);
+    saveStoredTags(updated);
+    if (currentUser) {
+      saveTagToCloud(currentUser.uid, updatedTag).catch((err) => console.warn('Cloud tag update notice:', err));
     }
   };
 
-  const handleDeleteTag = (id: string, tagName: string) => {
-    const updatedTags = tags.filter((t) => t.id !== id);
-    setTags(updatedTags);
-    saveStoredTags(updatedTags);
+  const handleDeleteTag = (tagId: string, tagName?: string) => {
+    const tagToDelete = tags.find((t) => t.id === tagId);
+    const resolvedTagName = tagName || tagToDelete?.name;
+
+    const updated = tags.filter((t) => t.id !== tagId);
+    setTags(updated);
+    saveStoredTags(updated);
+
+    if (resolvedTagName) {
+      const strippedTx = transactions.map((t) => ({
+        ...t,
+        customTags: t.customTags ? t.customTags.filter((tn) => tn !== resolvedTagName) : [],
+      }));
+      setTransactions(strippedTx);
+      saveTransactions(strippedTx);
+    }
 
     if (currentUser) {
-      deleteTagFromCloud(currentUser.uid, id).catch((err) => console.warn(err));
-    }
-
-    if (selectedTag === tagName) {
-      setSelectedTag(null);
-    }
-  };
-
-  const handleDeleteAllData = () => {
-    warning();
-    setTransactions([]);
-    setSelectedTag(null);
-    clearAllTransactionsAndData();
-
-    if (currentUser) {
-      transactions.forEach((tx) => {
-        deleteTransactionFromCloud(currentUser.uid, tx.id).catch((err) => console.warn(err));
-      });
-    }
-
-    setToastMessage('✓ All transactions erased. Everything reset to zero.');
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4000);
-  };
-
-  const handleForceSync = useCallback(async () => {
-    if (!currentUser) return;
-    setSyncStatus('syncing');
-    await syncInitialLocalDataToCloud(currentUser.uid, transactions, tags, {
-      currency,
-      budget,
-      theme,
-    });
-    setLastSyncedAt(new Date());
-    setSyncStatus('synced');
-  }, [currentUser, transactions, tags, currency, budget, theme, setSyncStatus, setLastSyncedAt]);
-
-  const handleImportData = (data: { transactions: Transaction[]; tags: CustomTag[] }) => {
-    success();
-    setTransactions(data.transactions);
-    saveTransactions(data.transactions);
-    if (data.tags && data.tags.length > 0) {
-      setTags(data.tags);
-      saveStoredTags(data.tags);
+      deleteTagFromCloud(currentUser.uid, tagId).catch((err) => console.warn('Cloud tag delete notice:', err));
     }
   };
 
   const handleFilterByTag = (tagName: string) => {
-    tap('light');
     setSelectedTag(tagName);
     setActiveTab('ledger');
   };
 
+  const handleTabChange = (tab: ActiveTab) => {
+    tap('light');
+    setActiveTab(tab);
+  };
+
+  const handleTimeFilterChange = (tf: TimeFilter) => {
+    setTimeFilter(tf);
+  };
+
+  const handleDeleteAllData = () => {
+    clearAllTransactionsAndData();
+    setTransactions([]);
+    setSelectedTag(null);
+    setSearchQuery('');
+    setActiveTab('ledger');
+  };
+
+  const handleImportData = (data: { transactions: Transaction[]; tags: CustomTag[] }) => {
+    setTransactions(data.transactions);
+    saveTransactions(data.transactions);
+    setTags(data.tags);
+    saveStoredTags(data.tags);
+    setActiveTab('ledger');
+  };
+
+  const handleForceSync = async () => {
+    if (!currentUser) return;
+    setSyncStatus('syncing');
+    try {
+      await syncInitialLocalDataToCloud(
+        currentUser.uid,
+        transactions,
+        tags,
+        { currency, budget, theme },
+        savingsGoals,
+        subscriptions
+      );
+      setSyncStatus('synced');
+      setLastSyncedAt(new Date());
+    } catch (err) {
+      console.warn('Force sync notice:', err);
+      setSyncStatus('offline');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col transition-colors">
+      {/* Splash Page Animation on App Open */}
+      {showSplash && (
+        <SplashPage
+          onComplete={() => setShowSplash(false)}
+        />
+      )}
+
       {/* Top Download Smart Banner */}
       {showDownloadBanner && (
         <DownloadBanner
@@ -469,9 +764,9 @@ export default function App() {
         />
       )}
 
-      {/* Responsive layout container: seamless across mobile, tablet, and desktop */}
+      {/* Responsive layout container */}
       <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col">
-        {/* Top Header with Responsive Time Filter, Desktop Navigation & Currency Badge */}
+        {/* Top Header */}
         <Header
           activeTab={activeTab}
           timeFilter={timeFilter}
@@ -485,6 +780,7 @@ export default function App() {
           onOpenAddModal={() => {
             tap('medium');
             setEditingTx(null);
+            setInitialTxType('expense');
             setIsModalOpen(true);
           }}
           onOpenAccount={() => {
@@ -495,13 +791,24 @@ export default function App() {
             tap('light');
             setIsWidgetsOpen(true);
           }}
+          hasDueSubscriptions={hasDueSubscriptions}
         />
 
-        {/* Main Tab Content (Responsive padding and spacing across all devices) */}
+        {/* Main Tab Content */}
         <main className="flex-1 p-3.5 sm:p-5 lg:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-12">
+          {/* Actionable Recurring Subscription Due Banner */}
+          <SubscriptionDueBanner
+            subscriptions={subscriptions}
+            currency={currency}
+            onLogPayment={handleLogSubscriptionPayment}
+            onDismissReminder={handleDismissSubscriptionReminder}
+            onOpenSubscriptions={() => setActiveTab('subscriptions')}
+          />
+
+          {/* TAB 1: Ledger / Wallet View */}
           {activeTab === 'ledger' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-              {/* Left Column (Sticky Sidebar on Desktop): Overview & Tags Filter */}
+              {/* Left Column (Sticky Sidebar on Desktop): Overview, Savings Card & Tags Filter */}
               <div className="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-20">
                 {/* Apple Card Style Overview Card */}
                 <OverviewCard
@@ -511,6 +818,26 @@ export default function App() {
                   monthlyBudget={budget.monthlyLimit}
                   onOpenAnalytics={() => setActiveTab('analytics')}
                   timeFilter={timeFilter}
+                />
+
+                {/* Savings Targets Card on Overview Dashboard */}
+                <SavingsGoalsCard
+                  goals={savingsGoals}
+                  currency={currency}
+                  onOpenNewGoalModal={() => {
+                    setEditingSavingsGoal(null);
+                    setIsSavingsGoalModalOpen(true);
+                  }}
+                  onEditGoal={(goal) => {
+                    setEditingSavingsGoal(goal);
+                    setIsSavingsGoalModalOpen(true);
+                  }}
+                  onAddSavingsForGoal={(goal) => {
+                    setInitialTxType('savings');
+                    setInitialSavingsGoalId(goal.id);
+                    setEditingTx(null);
+                    setIsModalOpen(true);
+                  }}
                 />
 
                 {/* Apple Pill Horizontal Custom Tag Filter */}
@@ -542,6 +869,7 @@ export default function App() {
                   }}
                   onAddNew={() => {
                     setEditingTx(null);
+                    setInitialTxType('expense');
                     setIsModalOpen(true);
                   }}
                   timeFilter={timeFilter}
@@ -550,6 +878,26 @@ export default function App() {
             </div>
           )}
 
+          {/* TAB 2: Subscriptions Hub View */}
+          {activeTab === 'subscriptions' && (
+            <SubscriptionsView
+              subscriptions={subscriptions}
+              currency={currency}
+              onOpenAddSubscription={() => {
+                setEditingSubscription(null);
+                setIsSubscriptionModalOpen(true);
+              }}
+              onEditSubscription={(sub) => {
+                setEditingSubscription(sub);
+                setIsSubscriptionModalOpen(true);
+              }}
+              onToggleStatus={handleToggleSubscriptionStatus}
+              onDeleteSubscription={handleDeleteSubscription}
+              onLogPayment={handleLogSubscriptionPayment}
+            />
+          )}
+
+          {/* TAB 3: Custom Tags View */}
           {activeTab === 'tags' && (
             <TagAnalytics
               transactions={timeFilteredTransactions}
@@ -562,6 +910,7 @@ export default function App() {
             />
           )}
 
+          {/* TAB 4: Analytics View */}
           {activeTab === 'analytics' && (
             <AnalyticsView
               transactions={timeFilteredTransactions}
@@ -573,6 +922,15 @@ export default function App() {
           )}
         </main>
 
+        {/* Small Footer with Product Hunt HTML Embed */}
+        <Footer
+          onReplaySplash={() => setShowSplash(true)}
+          onOpenSettings={() => {
+            tap('light');
+            setIsSettingsOpen(true);
+          }}
+        />
+
         {/* Fixed Responsive Bottom Navigation Bar for Mobile Viewports */}
         <BottomNav
           activeTab={activeTab}
@@ -580,8 +938,10 @@ export default function App() {
           onOpenAddModal={() => {
             tap('medium');
             setEditingTx(null);
+            setInitialTxType('expense');
             setIsModalOpen(true);
           }}
+          hasDueSubscriptions={hasDueSubscriptions}
         />
 
         {/* Transaction Add/Edit Sheet Modal */}
@@ -590,6 +950,7 @@ export default function App() {
           onClose={() => {
             setIsModalOpen(false);
             setEditingTx(null);
+            setInitialSavingsGoalId('');
           }}
           onSave={handleSaveTransaction}
           onDelete={handleDeleteTransaction}
@@ -598,6 +959,42 @@ export default function App() {
           availableTags={tags}
           onCreateTag={handleCreateTag}
           currency={currency}
+          savingsGoals={savingsGoals}
+          onOpenNewGoalModal={() => {
+            setIsModalOpen(false);
+            setEditingSavingsGoal(null);
+            setIsSavingsGoalModalOpen(true);
+          }}
+          subscriptions={subscriptions}
+          initialType={initialTxType}
+          initialSavingsGoalId={initialSavingsGoalId}
+        />
+
+        {/* Savings Goal Add/Edit Sheet Modal */}
+        <SavingsGoalModal
+          isOpen={isSavingsGoalModalOpen}
+          onClose={() => {
+            setIsSavingsGoalModalOpen(false);
+            setEditingSavingsGoal(null);
+          }}
+          onSave={handleSaveSavingsGoal}
+          onDelete={handleDeleteSavingsGoal}
+          editingGoal={editingSavingsGoal}
+          currency={currency}
+        />
+
+        {/* Recurring Subscription Add/Edit Sheet Modal */}
+        <SubscriptionModal
+          isOpen={isSubscriptionModalOpen}
+          onClose={() => {
+            setIsSubscriptionModalOpen(false);
+            setEditingSubscription(null);
+          }}
+          onSave={handleSaveSubscription}
+          onDelete={handleDeleteSubscription}
+          editingSubscription={editingSubscription}
+          currency={currency}
+          categories={DEFAULT_CATEGORIES}
         />
 
         {/* Settings & Preferences Sheet Modal */}
@@ -636,6 +1033,7 @@ export default function App() {
             tap('light');
             setIsWidgetsOpen(true);
           }}
+          onReplaySplash={() => setShowSplash(true)}
         />
 
         {/* Multi-Device Cloud Sync & Account Modal */}
@@ -656,6 +1054,7 @@ export default function App() {
           currency={currency}
           onOpenAddModal={() => {
             setEditingTx(null);
+            setInitialTxType('expense');
             setIsModalOpen(true);
           }}
         />

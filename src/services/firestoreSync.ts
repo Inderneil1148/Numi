@@ -10,7 +10,15 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { handleFirestoreError, OperationType } from './firestoreErrors';
-import { Transaction, CustomTag, CurrencyConfig, BudgetConfig, ThemeMode } from '../types/finance';
+import {
+  Transaction,
+  CustomTag,
+  CurrencyConfig,
+  BudgetConfig,
+  ThemeMode,
+  SavingsGoal,
+  Subscription,
+} from '../types/finance';
 
 export interface UserCloudSettings {
   userId: string;
@@ -46,6 +54,9 @@ export function subscribeUserTransactions(
           title: data.title || '',
           category: data.category || '',
           customTags: Array.isArray(data.customTags) ? data.customTags : [],
+          savingsGoalId: data.savingsGoalId || undefined,
+          subscriptionId: data.subscriptionId || undefined,
+          isSubscription: typeof data.isSubscription === 'boolean' ? data.isSubscription : undefined,
           date: data.date || '',
           time: data.time || undefined,
           note: data.note || undefined,
@@ -90,6 +101,85 @@ export function subscribeUserTags(
           createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
         });
       });
+      onData(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+  );
+}
+
+/**
+ * Real-time listener for user savings goals.
+ */
+export function subscribeUserSavingsGoals(
+  userId: string,
+  onData: (goals: SavingsGoal[]) => void,
+  onError?: (err: unknown) => void
+): Unsubscribe {
+  const path = `users/${userId}/savingsGoals`;
+  const goalsRef = collection(db, 'users', userId, 'savingsGoals');
+
+  return onSnapshot(
+    goalsRef,
+    (snapshot) => {
+      const items: SavingsGoal[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        items.push({
+          id: data.id || docSnap.id,
+          name: data.name || '',
+          targetAmount: Number(data.targetAmount) || 0,
+          currentAmount: Number(data.currentAmount) || 0,
+          targetDate: data.targetDate || undefined,
+          color: data.color || '#9EE42A',
+          note: data.note || undefined,
+          createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
+        });
+      });
+      items.sort((a, b) => b.createdAt - a.createdAt);
+      onData(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+  );
+}
+
+/**
+ * Real-time listener for user recurring subscriptions.
+ */
+export function subscribeUserSubscriptions(
+  userId: string,
+  onData: (subs: Subscription[]) => void,
+  onError?: (err: unknown) => void
+): Unsubscribe {
+  const path = `users/${userId}/subscriptions`;
+  const subsRef = collection(db, 'users', userId, 'subscriptions');
+
+  return onSnapshot(
+    subsRef,
+    (snapshot) => {
+      const items: Subscription[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        items.push({
+          id: data.id || docSnap.id,
+          name: data.name || '',
+          amount: Number(data.amount) || 0,
+          category: data.category || 'Utilities',
+          billingDay: Number(data.billingDay) || 1,
+          status: data.status === 'paused' ? 'paused' : 'active',
+          lastLoggedDate: data.lastLoggedDate || undefined,
+          reminderDismissedMonth: data.reminderDismissedMonth || undefined,
+          note: data.note || undefined,
+          createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
+        });
+      });
+      // Sort by billing day ascending
+      items.sort((a, b) => a.billingDay - b.billingDay);
       onData(items);
     },
     (error) => {
@@ -145,6 +235,9 @@ export async function saveTransactionToCloud(userId: string, tx: Transaction): P
     };
     if (tx.time) cleanPayload.time = tx.time.slice(0, 10);
     if (tx.note) cleanPayload.note = tx.note.slice(0, 500);
+    if (tx.savingsGoalId) cleanPayload.savingsGoalId = tx.savingsGoalId.slice(0, 128);
+    if (tx.subscriptionId) cleanPayload.subscriptionId = tx.subscriptionId.slice(0, 128);
+    if (typeof tx.isSubscription === 'boolean') cleanPayload.isSubscription = tx.isSubscription;
 
     await setDoc(docRef, cleanPayload, { merge: true });
   } catch (error) {
@@ -202,6 +295,84 @@ export async function deleteTagFromCloud(userId: string, tagId: string): Promise
 }
 
 /**
+ * Save or update savings goal in cloud database.
+ */
+export async function saveSavingsGoalToCloud(userId: string, goal: SavingsGoal): Promise<void> {
+  const path = `users/${userId}/savingsGoals/${goal.id}`;
+  try {
+    const docRef = doc(db, 'users', userId, 'savingsGoals', goal.id);
+    const payload: Record<string, unknown> = {
+      id: goal.id,
+      userId,
+      name: goal.name.slice(0, 100),
+      targetAmount: Number(goal.targetAmount),
+      currentAmount: Number(goal.currentAmount),
+      createdAt: goal.createdAt || Date.now(),
+    };
+    if (goal.targetDate) payload.targetDate = goal.targetDate.slice(0, 20);
+    if (goal.color) payload.color = goal.color.slice(0, 30);
+    if (goal.note) payload.note = goal.note.slice(0, 500);
+
+    await setDoc(docRef, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+/**
+ * Delete savings goal from cloud database.
+ */
+export async function deleteSavingsGoalFromCloud(userId: string, goalId: string): Promise<void> {
+  const path = `users/${userId}/savingsGoals/${goalId}`;
+  try {
+    const docRef = doc(db, 'users', userId, 'savingsGoals', goalId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Save or update subscription in cloud database.
+ */
+export async function saveSubscriptionToCloud(userId: string, sub: Subscription): Promise<void> {
+  const path = `users/${userId}/subscriptions/${sub.id}`;
+  try {
+    const docRef = doc(db, 'users', userId, 'subscriptions', sub.id);
+    const payload: Record<string, unknown> = {
+      id: sub.id,
+      userId,
+      name: sub.name.slice(0, 100),
+      amount: Number(sub.amount),
+      category: sub.category.slice(0, 60),
+      billingDay: Number(sub.billingDay),
+      status: sub.status,
+      createdAt: sub.createdAt || Date.now(),
+    };
+    if (sub.lastLoggedDate) payload.lastLoggedDate = sub.lastLoggedDate.slice(0, 20);
+    if (sub.reminderDismissedMonth) payload.reminderDismissedMonth = sub.reminderDismissedMonth.slice(0, 10);
+    if (sub.note) payload.note = sub.note.slice(0, 500);
+
+    await setDoc(docRef, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+/**
+ * Delete subscription from cloud database.
+ */
+export async function deleteSubscriptionFromCloud(userId: string, subId: string): Promise<void> {
+  const path = `users/${userId}/subscriptions/${subId}`;
+  try {
+    const docRef = doc(db, 'users', userId, 'subscriptions', subId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
  * Save or update user settings and profile in cloud database.
  */
 export async function saveUserSettingsToCloud(
@@ -235,7 +406,9 @@ export async function syncInitialLocalDataToCloud(
   userId: string,
   localTransactions: Transaction[],
   localTags: CustomTag[],
-  initialSettings?: Partial<UserCloudSettings>
+  initialSettings?: Partial<UserCloudSettings>,
+  localSavingsGoals?: SavingsGoal[],
+  localSubscriptions?: Subscription[]
 ): Promise<{ migratedCount: number }> {
   const txCollectionPath = `users/${userId}/transactions`;
   try {
@@ -260,10 +433,13 @@ export async function syncInitialLocalDataToCloud(
         };
         if (tx.time) cleanPayload.time = tx.time.slice(0, 10);
         if (tx.note) cleanPayload.note = tx.note.slice(0, 500);
+        if (tx.savingsGoalId) cleanPayload.savingsGoalId = tx.savingsGoalId.slice(0, 128);
+        if (tx.subscriptionId) cleanPayload.subscriptionId = tx.subscriptionId.slice(0, 128);
+        if (typeof tx.isSubscription === 'boolean') cleanPayload.isSubscription = tx.isSubscription;
         batch.set(ref, cleanPayload);
       });
 
-      // Also migrate custom tags
+      // Migrate custom tags
       localTags.forEach((tag) => {
         const tagRef = doc(db, 'users', userId, 'tags', tag.id);
         batch.set(tagRef, {
@@ -274,6 +450,41 @@ export async function syncInitialLocalDataToCloud(
           createdAt: tag.createdAt || Date.now(),
         });
       });
+
+      // Migrate savings goals
+      if (localSavingsGoals) {
+        localSavingsGoals.forEach((goal) => {
+          const goalRef = doc(db, 'users', userId, 'savingsGoals', goal.id);
+          const payload: Record<string, unknown> = {
+            id: goal.id,
+            userId,
+            name: goal.name.slice(0, 100),
+            targetAmount: Number(goal.targetAmount),
+            currentAmount: Number(goal.currentAmount),
+            createdAt: goal.createdAt || Date.now(),
+          };
+          if (goal.targetDate) payload.targetDate = goal.targetDate.slice(0, 20);
+          if (goal.color) payload.color = goal.color.slice(0, 30);
+          batch.set(goalRef, payload);
+        });
+      }
+
+      // Migrate subscriptions
+      if (localSubscriptions) {
+        localSubscriptions.forEach((sub) => {
+          const subRef = doc(db, 'users', userId, 'subscriptions', sub.id);
+          batch.set(subRef, {
+            id: sub.id,
+            userId,
+            name: sub.name.slice(0, 100),
+            amount: Number(sub.amount),
+            category: sub.category.slice(0, 60),
+            billingDay: Number(sub.billingDay),
+            status: sub.status,
+            createdAt: sub.createdAt || Date.now(),
+          });
+        });
+      }
 
       await batch.commit();
       return { migratedCount: localTransactions.length };

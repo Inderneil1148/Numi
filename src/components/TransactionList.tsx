@@ -9,7 +9,7 @@ import {
 import { CategoryIcon } from './CategoryIcon';
 import { TagChip } from './TagChip';
 import { formatCurrency, formatDateLabel } from '../utils/formatters';
-import { Search, X, Plus, ChevronRight } from 'lucide-react';
+import { Search, X, Plus, ChevronRight, PiggyBank, Repeat } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
 
 interface TransactionListProps {
@@ -21,8 +21,8 @@ interface TransactionListProps {
   onSearchChange: (q: string) => void;
   selectedTag: string | null;
   onSelectTag: (tag: string | null) => void;
-  typeFilter: 'all' | 'expense' | 'income';
-  onTypeFilterChange: (type: 'all' | 'expense' | 'income') => void;
+  typeFilter: 'all' | 'expense' | 'income' | 'savings';
+  onTypeFilterChange: (type: 'all' | 'expense' | 'income' | 'savings') => void;
   onEditTransaction: (tx: Transaction) => void;
   onAddNew: () => void;
   timeFilter?: TimeFilter;
@@ -45,7 +45,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 }) => {
   const { tap } = useHaptics();
 
-  const handleTypeClick = (type: 'all' | 'expense' | 'income') => {
+  const handleTypeClick = (type: 'all' | 'expense' | 'income' | 'savings') => {
     tap('light');
     onTypeFilterChange(type);
   };
@@ -59,6 +59,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     tap('medium');
     onAddNew();
   };
+
   const categoryMap = useMemo(() => {
     const map = new Map<string, Category>();
     categories.forEach((c) => map.set(c.name, c));
@@ -116,9 +117,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       currentGroup.items.push(tx);
       if (tx.type === 'income') {
         currentGroup.netTotal += tx.amount;
-      } else {
+      } else if (tx.type === 'expense') {
         currentGroup.netTotal -= tx.amount;
       }
+      // Note: savings transfers do not detract from pure net income calculation
     });
 
     return groups;
@@ -126,7 +128,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Material Design 3 Search Bar & Filter Chips */}
+      {/* Search Bar & Filter Chips */}
       <div className="space-y-2.5">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
           <div className="relative flex-1">
@@ -140,28 +142,27 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               placeholder="Search title, note, category or #tag..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-[#1C1C1E] text-[#1F1F1F] dark:text-white rounded-xl border border-[#C4C7C5] dark:border-white/[0.1] placeholder:text-[#747775] dark:placeholder:text-[#636366] font-normal focus:outline-none focus:border-[#0B57D0] dark:focus:border-[#0A84FF] focus:ring-1 focus:ring-[#0B57D0] dark:focus:ring-[#0A84FF] transition-all min-h-[38px] shadow-2xs"
+              className="w-full pl-10 pr-9 py-2.5 text-sm bg-white dark:bg-[#1C1C1E] rounded-2xl text-[#1F1F1F] dark:text-white placeholder:text-[#747775] dark:placeholder:text-[#636366] border border-[#E0E2EC] dark:border-white/[0.08] focus:outline-none focus:border-[#007AFF] shadow-xs"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => onSearchChange('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#747775] dark:bg-[#636366] text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
-                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#747775] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white p-0.5 rounded-full"
               >
-                <X size={12} strokeWidth={2.5} />
+                <X size={15} />
               </button>
             )}
           </div>
 
-          {/* Material 3 Segmented Pill Control */}
-          <div className="flex p-1 bg-[#E0E2EC]/70 dark:bg-[#1C1C1E] dark:border dark:border-white/[0.06] rounded-full sm:w-72 shrink-0">
+          {/* Type Filter Segmented Control */}
+          <div className="flex items-center p-1 bg-[#E0E2EC]/70 dark:bg-[#2C2C2E] rounded-xl self-start sm:self-auto shrink-0 overflow-x-auto max-w-full">
             <button
               type="button"
               onClick={() => handleTypeClick('all')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all min-h-[30px] cursor-pointer ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 typeFilter === 'all'
-                  ? 'bg-white text-[#041E49] shadow-xs font-bold dark:bg-[#2C2C2E] dark:text-white dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)]'
+                  ? 'bg-white text-[#1F1F1F] shadow-xs dark:bg-[#1C1C1E] dark:text-white'
                   : 'text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white'
               }`}
             >
@@ -170,24 +171,36 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <button
               type="button"
               onClick={() => handleTypeClick('expense')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all min-h-[30px] cursor-pointer ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 typeFilter === 'expense'
-                  ? 'bg-white text-[#B3261E] shadow-xs font-bold dark:bg-[#2C2C2E] dark:text-[#FF453A] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)]'
+                  ? 'bg-white text-[#B3261E] shadow-xs dark:bg-[#1C1C1E] dark:text-[#FF453A]'
                   : 'text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white'
               }`}
             >
-              Expenses
+              Expense
             </button>
             <button
               type="button"
               onClick={() => handleTypeClick('income')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all min-h-[30px] cursor-pointer ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 typeFilter === 'income'
-                  ? 'bg-white text-[#146C2E] shadow-xs font-bold dark:bg-[#2C2C2E] dark:text-[#30D158] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3)]'
+                  ? 'bg-white text-[#146C2E] shadow-xs dark:bg-[#1C1C1E] dark:text-[#30D158]'
                   : 'text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white'
               }`}
             >
               Income
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTypeClick('savings')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                typeFilter === 'savings'
+                  ? 'bg-white text-[#2B540A] shadow-xs dark:bg-[#1C1C1E] dark:text-[#9EE42A]'
+                  : 'text-[#444746] hover:text-[#1F1F1F] dark:text-[#8E8E93] dark:hover:text-white'
+              }`}
+            >
+              <PiggyBank size={12} className="text-[#9EE42A]" />
+              <span>Savings</span>
             </button>
           </div>
         </div>
@@ -271,7 +284,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         <div className="space-y-4">
           {groupedByDate.map((group) => (
             <div key={group.date} className="space-y-1.5">
-              {/* Material Design 3 Section Header */}
+              {/* Section Header */}
               <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#444746] dark:text-[#8E8E93] tracking-tight uppercase">
                 <span>{formatDateLabel(group.date)}</span>
                 <span className="tabular-nums font-medium text-[11px] normal-case">
@@ -289,12 +302,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 </span>
               </div>
 
-              {/* Inset Grouped Table Cell List */}
+              {/* Table Cell List */}
               <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-[#E0E2EC] dark:border-white/[0.08] shadow-xs divide-y divide-[#E0E2EC] dark:divide-white/[0.06] overflow-hidden">
                 {group.items.map((tx) => {
                   const cat = categoryMap.get(tx.category);
+                  const isSavings = tx.type === 'savings';
                   const isExpense = tx.type === 'expense';
-                  const catColor = cat?.color || '#0B57D0';
+                  const isIncome = tx.type === 'income';
+                  const catColor = isSavings ? '#9EE42A' : cat?.color || '#0B57D0';
 
                   return (
                     <div
@@ -310,11 +325,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                           color: catColor,
                         }}
                       >
-                        <CategoryIcon
-                          iconName={cat?.iconName || 'CreditCard'}
-                          size={18}
-                          className=""
-                        />
+                        {isSavings ? (
+                          <PiggyBank size={18} className="text-[#2B540A] dark:text-[#9EE42A]" />
+                        ) : (
+                          <CategoryIcon
+                            iconName={cat?.iconName || 'CreditCard'}
+                            size={18}
+                          />
+                        )}
                       </div>
 
                       {/* Middle: Title, Category & Custom Tags */}
@@ -323,6 +341,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                           <p className="text-sm font-semibold text-[#1F1F1F] dark:text-white truncate tracking-tight">
                             {tx.title}
                           </p>
+                          {tx.isSubscription && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#5856D6]/15 text-[#5856D6] dark:text-[#D1A4FF]">
+                              <Repeat size={10} />
+                              <span>Recurring</span>
+                            </span>
+                          )}
                           {tx.note && (
                             <span
                               className="hidden md:inline-block text-xs text-[#747775] dark:text-[#8E8E93] truncate max-w-[200px] lg:max-w-[280px]"
@@ -338,6 +362,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                           <span className="truncate max-w-[85px] sm:max-w-[120px] text-[11px] font-medium text-[#444746] dark:text-[#8E8E93] shrink-0">
                             {tx.category}
                           </span>
+
+                          {isSavings && (
+                            <span className="text-[10px] font-semibold text-[#2B540A] dark:text-[#9EE42A] bg-[#9EE42A]/15 px-1.5 py-0.5 rounded-md">
+                              Savings Deposit
+                            </span>
+                          )}
 
                           {tx.customTags && tx.customTags.length > 0 && (
                             <>
@@ -376,10 +406,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                         <div>
                           <div
                             className={`text-sm font-semibold tabular-nums tracking-tight whitespace-nowrap ${
-                              isExpense ? 'text-[#1F1F1F] dark:text-white' : 'text-[#146C2E] dark:text-[#30D158]'
+                              isSavings
+                                ? 'text-[#2B540A] dark:text-[#9EE42A]'
+                                : isIncome
+                                ? 'text-[#146C2E] dark:text-[#30D158]'
+                                : 'text-[#1F1F1F] dark:text-white'
                             }`}
                           >
-                            {isExpense ? '-' : '+'}
+                            {isSavings ? '⇡ ' : isExpense ? '-' : '+'}
                             {formatCurrency(tx.amount, currency, { signDisplay: 'never' })}
                           </div>
                           {tx.time && (
@@ -388,7 +422,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                             </div>
                           )}
                         </div>
-                        <ChevronRight size={14} className="text-[#C4C7C5] dark:text-[#48484A] shrink-0" />
+
+                        <ChevronRight
+                          size={14}
+                          className="text-[#C4C7C5] dark:text-[#636366] group-hover:text-[#444746] dark:group-hover:text-white transition-colors"
+                        />
                       </div>
                     </div>
                   );

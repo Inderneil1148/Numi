@@ -1,5 +1,13 @@
-import { Transaction, CustomTag, CurrencyConfig, BudgetConfig, ThemeMode } from '../types/finance';
-import { DEFAULT_TAGS } from './constants';
+import {
+  Transaction,
+  CustomTag,
+  CurrencyConfig,
+  BudgetConfig,
+  ThemeMode,
+  SavingsGoal,
+  Subscription,
+} from '../types/finance';
+import { DEFAULT_TAGS, DEFAULT_SAVINGS_GOALS, DEFAULT_SUBSCRIPTIONS } from './constants';
 import { SUPPORTED_CURRENCIES } from './formatters';
 
 const STORAGE_KEYS = {
@@ -8,6 +16,8 @@ const STORAGE_KEYS = {
   CURRENCY: 'numi_finance_currency',
   BUDGET: 'numi_finance_budget',
   THEME: 'numi_finance_theme',
+  SAVINGS_GOALS: 'numi_finance_savings_goals',
+  SUBSCRIPTIONS: 'numi_finance_subscriptions',
 };
 
 const LEGACY_STORAGE_KEYS = {
@@ -19,7 +29,7 @@ const LEGACY_STORAGE_KEYS = {
 };
 
 function getStoredItem(key: keyof typeof STORAGE_KEYS): string | null {
-  return localStorage.getItem(STORAGE_KEYS[key]) ?? localStorage.getItem(LEGACY_STORAGE_KEYS[key]);
+  return localStorage.getItem(STORAGE_KEYS[key]) ?? localStorage.getItem(LEGACY_STORAGE_KEYS[key as keyof typeof LEGACY_STORAGE_KEYS] || '');
 }
 
 // Generates dynamic dates relative to today
@@ -146,6 +156,60 @@ export function saveStoredTags(tags: CustomTag[]): void {
   }
 }
 
+export function loadStoredSavingsGoals(): SavingsGoal[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
+    if (!raw) {
+      saveStoredSavingsGoals(DEFAULT_SAVINGS_GOALS);
+      return DEFAULT_SAVINGS_GOALS;
+    }
+    const parsed: SavingsGoal[] = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      saveStoredSavingsGoals(DEFAULT_SAVINGS_GOALS);
+      return DEFAULT_SAVINGS_GOALS;
+    }
+    return parsed;
+  } catch (err) {
+    console.error('Failed to load savings goals:', err);
+    return DEFAULT_SAVINGS_GOALS;
+  }
+}
+
+export function saveStoredSavingsGoals(goals: SavingsGoal[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(goals));
+  } catch (err) {
+    console.error('Failed to save savings goals:', err);
+  }
+}
+
+export function loadStoredSubscriptions(): Subscription[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTIONS);
+    if (!raw) {
+      saveStoredSubscriptions(DEFAULT_SUBSCRIPTIONS);
+      return DEFAULT_SUBSCRIPTIONS;
+    }
+    const parsed: Subscription[] = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      saveStoredSubscriptions(DEFAULT_SUBSCRIPTIONS);
+      return DEFAULT_SUBSCRIPTIONS;
+    }
+    return parsed;
+  } catch (err) {
+    console.error('Failed to load subscriptions:', err);
+    return DEFAULT_SUBSCRIPTIONS;
+  }
+}
+
+export function saveStoredSubscriptions(subscriptions: Subscription[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(subscriptions));
+  } catch (err) {
+    console.error('Failed to save subscriptions:', err);
+  }
+}
+
 export function loadStoredCurrency(): CurrencyConfig {
   const inr = SUPPORTED_CURRENCIES.find((c) => c.code === 'INR') || {
     code: 'INR',
@@ -160,7 +224,6 @@ export function loadStoredCurrency(): CurrencyConfig {
       return inr;
     }
     const parsed = JSON.parse(raw);
-    // User requested ₹ as currency: migrate any non-INR stored setting to INR
     if (!parsed || parsed.code !== 'INR') {
       saveStoredCurrency(inr);
       return inr;
@@ -236,7 +299,7 @@ export function exportToCSV(transactions: Transaction[], currencySymbol: string)
     currencySymbol,
     `"${t.title.replace(/"/g, '""')}"`,
     `"${t.category.replace(/"/g, '""')}"`,
-    `"${t.customTags.join(', ')}"`,
+    `"${(t.customTags || []).join(', ')}"`,
     `"${(t.note || '').replace(/"/g, '""')}"`,
   ]);
 
