@@ -1,31 +1,30 @@
-# Savings Targets & Recurring Subscriptions Hub
+# Web Authentication API (Face ID / Touch ID) in SecurityLockGuard
 
-Empower users to define and fund dedicated savings targets without tag clutter, alongside a recurring subscription manager with monthly expense projections and one-tap renewal payment reminders.
+Seamlessly integrate the standard Web Authentication API (`navigator.credentials`) into the `SecurityLockGuard` component, delivering instant Apple Face ID, Touch ID, Windows Hello, and Android Biometric unlock alongside the existing 4-digit PIN security system.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following product decisions were confirmed during interactive clarification and form the foundation of this release:
+> The following product and interaction decisions were confirmed during the interactive clarification interview and govern the implementation of the biometric layer:
 
-- **Confirmed Decision 1 (Savings Target Hub)**: Savings goals and accumulated progress will be showcased via a dedicated **Savings Card** on the Overview dashboard, providing immediate visual feedback on goal completion rates.
-- **Confirmed Decision 2 (Subscriptions Management)**: Subscriptions will have a dedicated **Subscriptions View** featuring a monthly expense run-rate total, renewal calendar, and active/paused management.
-- **Confirmed Decision 3 (Renewal Reminders & Actions)**: When a recurring subscription reaches its monthly renewal day, an **in-app due banner** will appear on the dashboard with a one-tap **"Log Payment"** button that automatically records the transaction.
-- **Confirmed Decision 4 (Zero-Tag Isolation for Savings)**: In accordance with your request, selecting "Savings" in the New Transaction modal will remove all tag inputs, presenting a clean saving goal selector and contribution amount.
+- **Confirmed Decision 1 (Auto-Prompt on Lock Screen Opening)**: Whenever the lock screen appears (cold app launch, return from background, or manual lock), `SecurityLockGuard` will **automatically prompt for Face ID / Touch ID** after a brief 300ms transition buffer so users can unlock in under a second without an extra tap.
+- **Confirmed Decision 2 (Post-PIN Biometric Enablement Sheet)**: Immediately upon completing 4-digit PIN setup or passcode change, if the current device supports platform authenticators (`isUserVerifyingPlatformAuthenticatorAvailable()`), the app will **automatically offer to enable Face ID / Touch ID**, linking the device's biometric credential in one tap.
+- **Confirmed Decision 3 (Graceful Fallback to 4-Digit PIN)**: If the user cancels the biometric prompt or biometric recognition fails, the interface **seamlessly falls back to the tactile 4-digit numeric keypad** without locking out the user, while preserving a dedicated biometric retry button on the keypad.
 
 ---
 
 ## 1. Overview & Core Concept
 
 ### What It Does
-1. **Savings Targets & Contributions**: Users can create multi-milestone savings targets (e.g. *Emergency Fund*, *New Laptop*, *Vacation Fund*, *Down Payment*) specifying target amounts and optional deadlines. When logging transactions, a new **"Savings"** option allows allocating funds directly into a chosen savings goal without distracting tag inputs.
-2. **Recurring Subscriptions & Reminders**: Users can track monthly recurring obligations (e.g. streaming services, gym memberships, software licenses, utilities) with their billing day of the month. As renewal dates approach, an interactive banner reminds the user and lets them record the expense in a single tap.
+Enhances the Numi privacy barrier with native hardware-level authentication. Users enjoy the speed and convenience of hardware biometric recognition (Face ID, Touch ID, Android Fingerprint, Windows Hello) while retaining a reliable 4-digit salted SHA-256 PIN as the primary authority and fallback.
 
 ### Target Audience & Persona
-Personal finance users, freelancers, and budget-conscious individuals who want to compartmentalize long-term savings separately from daily expenses, while proactively monitoring recurring fixed costs before credit cards are billed.
+Mobile and desktop users managing personal ledgers and account balances who desire frictionless instant access when opening their device without exposing financial data in shared spaces.
 
 ### Key Value Delivered
-- **Clarity on Capital Accumulation**: Distinguishes wealth-building deposits from ordinary expenditures.
-- **Elimination of Forgotten Subscriptions**: Avoids surprise recurring debits through timely reminders and visibility into annualized subscription spend.
+- **Sub-Second Access**: Unlocks in $\le 800\text{ms}$ via native platform biometrics.
+- **Zero-Friction Onboarding**: Automated prompt after PIN creation pairs biometrics without digging through settings.
+- **Resilient Fallback**: Cancellations, failures, or glove/mask scenarios smoothly transition to the 4-digit PIN.
 
 ---
 
@@ -33,126 +32,104 @@ Personal finance users, freelancers, and budget-conscious individuals who want t
 
 ### Key User Flows
 
-#### Flow A: Creating and Funding a Savings Target
-1. **Explore Goals**: The user scrolls down the Overview dashboard to find the **Savings Targets** card, displaying active goals, target amounts, saved totals, and progress bars.
-2. **Create New Goal**: Clicking **"New Goal"** opens a lightweight sheet where the user names the goal (e.g. *"Tokyo Trip"*), specifies the target sum (e.g. `$2,500`), and picks an accent tone.
-3. **Log a Contribution**: The user taps the floating **`+`** button (New Transaction). The type selector now features three options: `Expense`, `Income`, and `Savings`.
-4. **Focused Savings Form**: Selecting `Savings` replaces category and tag pickers with a **"Select Saving Goal"** dropdown or chip selector. The user enters the amount and saves.
-5. **Real-Time Progress**: The target's progress bar smoothly animates forward, and the total saved balance updates instantly.
+#### Flow A: Automated Unlock with Face ID / Touch ID
+1. **App Resume / Cold Launch**: The app opens or resumes from background with the frosted privacy curtain (`z-[150]`, `backdrop-blur-3xl bg-black/90 dark:bg-black/95 text-white`).
+2. **Auto-Trigger**: A subtle pulsing biometric glow (`#9EE42A`) signals authentication, and the browser invokes `navigator.credentials.get({ ... })`.
+3. **Biometric Success**: Haptic success feedback (`success()`) plays, the lock curtain smoothly dissolves (`opacity-0 scale-102 transition-all duration-300`), and the ledger dashboard is revealed.
+4. **Biometric Dismiss / Fail**: If dismissed or unrecognized, the prompt quietly closes, keeping the tactile 3x4 numeric keypad ready for immediate PIN entry. The dedicated biometric icon button on the bottom left allows re-prompting at any time.
 
-#### Flow B: Managing Subscriptions & One-Tap Renewal Logging
-1. **View Active Subscriptions**: Tapping the **Subscriptions** nav item or the dashboard widget opens the **Subscriptions View**, showing:
-   - **Monthly Total Run-Rate** (e.g. `$74.99/mo` · `$899.88/yr`).
-   - **Upcoming Renewal Timeline**: Subscriptions ordered chronologically by upcoming billing day.
-2. **Add a Subscription**: User taps **"Add Subscription"**, enters the name (e.g. *"Spotify Family"*), monthly cost (`$16.99`), category (*Entertainment*), and billing day of month (`18th`).
-3. **Due-Date In-App Banner**: On the 18th of the month, a subtle alert banner appears atop the dashboard:
-   - *"Spotify Family ($16.99) is due today"*
-   - User clicks **"Log Payment"** → Immediately creates an expense transaction timestamped for today, marks this month's renewal as logged, and triggers a subtle haptic confirmation.
+#### Flow B: PIN Creation & Automatic Biometric Enablement
+1. **Set Passcode**: In Settings, the user taps **"Passcode Lock"** and enters a 4-digit PIN followed by confirmation.
+2. **Post-Setup Biometric Modal**: If `PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()` resolves to true and biometrics are not yet active:
+   - A clean sheet displays: *"Enable Face ID / Touch ID for instant unlock?"*
+   - Tapping **"Enable Biometrics"** calls `navigator.credentials.create({ ... })`.
+   - On success, `webAuthnCredentialId` is stored in the security configuration with a success toast.
+   - Tapping **"Maybe Later"** keeps PIN-only lock active.
+
+#### Flow C: Manual Settings Governance & Testing
+1. In `SettingsModal.tsx`, the **"Security & App Lock"** section displays:
+   - **Passcode Lock**: Master switch for app locking.
+   - **Face ID / Touch ID**: Toggle to register new credentials or remove biometrics.
+   - **Lock on Background**: Toggle for immediate lock on multitasking switch.
+   - **Lock Screen Now**: Instant button allowing the user to immediately test biometric and PIN unlock.
 
 ### Visual Identity & Theme
-- **Dominant Neutral Canvas**: Clean Apple-style background (`#F2F2F7` light / `#000000` dark) with refined contrast surfaces (`#FFFFFF` light / `#1C1C1E` dark).
-- **Accent Hierarchy**:
-  - **Savings Accent**: Signature Numi Lime (`#9EE42A`) and Emerald (`#30D158` / `#146C2E`) representing growth and capital accumulation.
-  - **Subscriptions Accent**: Deep Indigo / Violet (`#5856D6` / `#AF52DE`) denoting recurring digital services.
-  - **Expense / Income Accents**: Retains signature Crimson (`#FF3B30`) and Mint (`#34C759`).
-- **Zero-Pill Discipline**: Metadata (renewal dates, billing days, target completion dates) rendered as clean unboxed text with typographic bullet separators (`·`).
-- **Tabular Figures**: All financial numbers, target percentages, and subscription fees strictly enforce `tabular-nums` alignment.
+- **Surface Elevation**: Deep frosted glass scrim (`backdrop-blur-3xl bg-black/90 dark:bg-black/95 text-white`) with high-contrast text for ambient readability.
+- **Biometric Button**: Circular button (`w-16 h-16 rounded-full bg-[#9EE42A]/20 text-[#9EE42A] border border-[#9EE42A]/30 active:scale-95`) embedded seamlessly in the bottom-left slot of the 3x4 keypad.
+- **Status Indicator**: Dynamic status subtext beneath the title communicating current state (*"Scan Face ID or Touch ID"*, *"Verifying biometrics..."*, *"Enter 4-digit passcode"*).
 
 ---
 
 ## 3. Key Product Decisions & Trade-Offs
 
-### Decision 1: Savings Representation in Ledger vs. Balance
-- **Chosen Approach**: Logging a `Savings` entry is treated as a dedicated transfer into savings. It tracks as accumulated capital in the Savings Goal and can be viewed in the transaction history with a distinctive Savings badge (`+ Saved`), without distorting everyday discretionary expense categories.
-- **Why**: Standard expense charts often mistakenly penalize users for saving money by treating savings deposits as "losses". Isolating Savings provides accurate discretionary spending metrics.
+### Decision 1: Platform Authenticator Attachment (`platform`)
+- **Chosen Approach**: Configure `authenticatorAttachment: 'platform'` and `userVerification: 'preferred'` in WebAuthn options.
+- **Why**: Directly targets device-native biometrics (Apple Secure Enclave, Android Keystore, Windows Hello) rather than external FIDO USB hardware keys.
 
-### Decision 2: Subscription Reminders as Actionable Banners
-- **Chosen Approach**: Interactive in-app banners with a one-tap **"Log Payment"** action, rather than silent automatic charges.
-- **Why**: Subscriptions can change prices, cancel mid-month, or pause. Prompting the user with a single tap maintains complete financial agency while eliminating manual data entry.
+### Decision 2: Fallback Credential Discovery vs. Strict ID Binding
+- **Chosen Approach**: When verifying, allow passing `credentialId` if properly encoded, with automatic fallback to discoverable resident keys or general platform assertion if ID decoding fails.
+- **Why**: Prevents authentication exceptions if hostnames change or cross-origin iframe storage isolates credentials.
 
-### Decision 3: Local-First Storage with Cloud Synchronization
-- **Chosen Approach**: Persist savings goals, savings contributions, and recurring subscriptions in local storage with automatic Firestore cloud sync for signed-in users.
-- **Why**: Ensures 100% offline availability, instant response times, and multi-device parity.
+### Decision 3: Single Master PIN Authority
+- **Chosen Approach**: WebAuthn serves as a convenience accelerator; the salted SHA-256 PIN remains the primary credential. Recovery and reset flows always allow re-authenticating with Google account or biometrics.
+- **Why**: Ensures users are never permanently locked out if a browser update or device biometrics change.
 
 ---
 
 ## 4. Technical Architecture & Data Strategy
 
-### System & Component Hierarchy
+### System Architecture Diagram
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                                App.tsx                                 │
-│          State: transactions, savingsGoals, subscriptions, budget      │
+│      State: isAppLocked, securityConfig, securityModalMode             │
 └───────────────┬───────────────────────────┬────────────────────────────┘
                 │                           │
   ┌─────────────▼─────────────┐ ┌───────────▼─────────────┐ ┌────────────▼────────────┐
-  │      Dashboard View       │ │   Subscriptions View    │ │     Modals & Sheets     │
+  │   SecurityLockGuard.tsx   │ │   SettingsModal.tsx     │ │     WebAuthn Helper     │
   ├───────────────────────────┤ ├─────────────────────────┤ ├─────────────────────────┤
-  │ • Header (Nav & Filter)   │ │ • Monthly/Annual Total  │ │ • TransactionModal      │
-  │ • SubscriptionDueBanner   │ │ • Renewal Timeline      │ │   (Expense/Income/Save) │
-  │ • OverviewCard (Totals)   │ │ • SubscriptionList      │ │ • SavingsGoalModal      │
-  │ • SavingsGoalsCard        │ │ • AddSubscriptionModal  │ │ • SubscriptionModal     │
-  │ • TransactionList         │ └─────────────────────────┘ └─────────────────────────┘
-  └───────────────────────────┘
+  │ • Auto-trigger biometric  │ │ • Toggle Passcode Lock  │ │ • isBiometricsSupported │
+  │ • Biometric retry button  │ │ • Toggle Face/Touch ID  │ │ • registerBiometrics()  │
+  │ • Post-setup prompt sheet │ │ • Lock on Background    │ │ • verifyBiometrics()    │
+  │ • Tactile 3x4 PIN keypad  │ │ • Lock Screen Now test  │ └─────────────────────────┘
+  │ • Recovery with Google    │ └─────────────────────────┘
+  └─────────────┬─────────────┘
                 │
   ┌─────────────▼─────────────────────────────────────────┐
-  │               Storage & Sync Layer                    │
+  │               Storage & Crypto Service                │
   ├───────────────────────────────────────────────────────┤
-  │ • storage.ts (localStorage backup & offline cache)    │
-  │ • firestoreSync.ts (cloud collection listeners)       │
+  │ • hashPin(pin, salt) via crypto.subtle.digest         │
+  │ • verifyPin(enteredPin, storedHash, salt)             │
+  │ • saveSecurityConfig() / loadSecurityConfig()         │
   └───────────────────────────────────────────────────────┘
 ```
 
-### Data Entities & Schema Extensions
+### Security Configuration Schema
 
 ```typescript
-// Savings Goal Entity
-export interface SavingsGoal {
-  id: string;
-  name: string;             // e.g. "Emergency Fund"
-  targetAmount: number;     // e.g. 5000
-  currentAmount: number;    // Accumulated total
-  targetDate?: string;      // YYYY-MM-DD (optional deadline)
-  color?: string;           // Hex visual tint
-  createdAt: number;
-}
-
-// Subscription Entity
-export interface Subscription {
-  id: string;
-  name: string;             // e.g. "Netflix", "Spotify"
-  amount: number;           // Recurring monthly cost
-  category: string;         // e.g. "Entertainment"
-  billingDay: number;       // 1 - 31 (day of month)
-  status: 'active' | 'paused';
-  lastLoggedDate?: string;  // YYYY-MM-DD (prevents duplicate logs)
-  createdAt: number;
-}
-
-// Transaction Model Update
-export type TransactionType = 'expense' | 'income' | 'savings';
-
-export interface Transaction {
-  id: string;
-  type: TransactionType;
-  amount: number;
-  title: string;
-  category: string;
-  customTags: string[];     // Empty array when type === 'savings'
-  savingsGoalId?: string;   // Associated goal if type === 'savings'
-  date: string;
-  time?: string;
-  note?: string;
-  createdAt: number;
+export interface SecurityConfig {
+  isEnabled: boolean;
+  pinHash: string | null;
+  pinSalt: string | null;
+  isBiometricsEnabled: boolean;
+  webAuthnCredentialId: string | null;
+  autoLockOnBackground: boolean;
 }
 ```
 
 ### Interactive State Transitions
-1. **Transaction Modal Type Switching**:
-   - Tapping `Savings` sets `type = 'savings'`, disables/clears tag inputs, and reveals the `SavingsGoalPicker`.
-   - Submitting updates both the transaction ledger and increments `currentAmount` on the target `SavingsGoal`.
-2. **Renewal Trigger Calculation**:
-   - On each render/day change, the app evaluates `subscriptions` against the current day of the month.
-   - Any active subscription whose `billingDay` is today (or past due within the current month) and whose `lastLoggedDate` does not match the current billing cycle surfaces in `SubscriptionDueBanner`.
-   - Clicking **"Log Payment"** logs the transaction, updates `lastLoggedDate`, and dismisses the banner.
+
+1. **Mount in Unlock Mode**:
+   - `useEffect` checks `config.isBiometricsEnabled` $\rightarrow$ if true, sets status to *"Scanning Face ID / Touch ID..."* and invokes `verifyBiometrics()`.
+   - On assertion resolution: triggers `success()` haptics, sets status to *"Unlocked"*, and executes `onSuccess()`.
+   - On cancellation/error: resets status to default subtitle and leaves keypad ready for PIN input.
+2. **Keypad Digit Press**:
+   - Updates `pin` state with acoustic/haptic feedback.
+   - At length 4: checks `verifyPin(pin, config.pinHash, config.pinSalt)`.
+   - On match: triggers `success()` and calls `onSuccess()`.
+   - On mismatch: triggers `animate-shake`, `warning()` haptics, clears digits, and shows *"Incorrect passcode. Try again."*
+3. **Setup Completion Flow**:
+   - When 4-digit PIN is confirmed in `mode="setup"`, if biometrics are supported and not enabled, shows the inline prompt: *"Enable Face ID / Touch ID for faster unlock?"*
+   - Clicking *"Enable"* calls `registerBiometrics()` and saves credential ID.
+   - Seamlessly returns to app with active security.

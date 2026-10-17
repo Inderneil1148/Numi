@@ -65,6 +65,14 @@ import { SavingsGoalModal } from './components/SavingsGoalModal';
 import { SubscriptionsView } from './components/SubscriptionsView';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { SubscriptionDueBanner } from './components/SubscriptionDueBanner';
+import { SecurityLockGuard } from './components/SecurityLockGuard';
+import { SecurityConfig, SecurityMode } from './types/security';
+import {
+  loadSecurityConfig,
+  saveSecurityConfig,
+  hashPin,
+  generateSalt,
+} from './utils/security';
 import { getTodayDateString } from './utils/formatters';
 
 export default function App() {
@@ -85,6 +93,62 @@ export default function App() {
 
   // Splash Screen Animation State (displayed on app open)
   const [showSplash, setShowSplash] = useState(true);
+
+  // Local Security Guard & PIN Lock State
+  const [securityConfig, setSecurityConfig] = useState<SecurityConfig>(loadSecurityConfig);
+  const [isAppLocked, setIsAppLocked] = useState<boolean>(() => {
+    const config = loadSecurityConfig();
+    return config.isEnabled && !!config.pinHash;
+  });
+  const [securityModalMode, setSecurityModalMode] = useState<SecurityMode | null>(null);
+
+  // Auto-lock when app returns from background or user switches apps
+  useEffect(() => {
+    if (!securityConfig.isEnabled || !securityConfig.autoLockOnBackground) return;
+
+    let backgroundTime: number | null = null;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        backgroundTime = Date.now();
+      } else if (document.visibilityState === 'visible') {
+        if (backgroundTime !== null) {
+          const elapsed = Date.now() - backgroundTime;
+          // When returning from background, engage lock screen to guard financial data
+          if (elapsed > 800) {
+            setIsAppLocked(true);
+          }
+          backgroundTime = null;
+        }
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (!backgroundTime) {
+        backgroundTime = Date.now();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      if (backgroundTime !== null) {
+        const elapsed = Date.now() - backgroundTime;
+        if (elapsed > 800) {
+          setIsAppLocked(true);
+        }
+        backgroundTime = null;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [securityConfig.isEnabled, securityConfig.autoLockOnBackground]);
 
   // Real-time Cloud Database Synchronization across devices
   useEffect(() => {
@@ -748,12 +812,81 @@ export default function App() {
     }
   };
 
+  // Security Handlers
+  const handleSecuritySetupComplete = async (
+    newPin: string,
+    enableBiometrics?: boolean,
+    credentialId?: string | null
+  ) => {
+    try {
+      const salt = generateSalt();
+      const pinHash = await hashPin(newPin, salt);
+      const updatedConfig: SecurityConfig = {
+        ...securityConfig,
+        isEnabled: true,
+        pinHash,
+        pinSalt: salt,
+        isBiometricsEnabled:
+          enableBiometrics !== undefined ? enableBiometrics : securityConfig.isBiometricsEnabled,
+        webAuthnCredentialId:
+          credentialId !== undefined ? credentialId : securityConfig.webAuthnCredentialId,
+      };
+      setSecurityConfig(updatedConfig);
+      saveSecurityConfig(updatedConfig);
+      setSecurityModalMode(null);
+      setToastMessage(
+        enableBiometrics
+          ? '✓ 4-digit passcode & Face ID / Touch ID active'
+          : '✓ 4-digit passcode lock is now active'
+      );
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err) {
+      console.warn('Failed to hash and save passcode:', err);
+    }
+  };
+
+  const handleForgotPinRecovery = () => {
+    const updatedConfig: SecurityConfig = {
+      ...securityConfig,
+      isEnabled: false,
+      pinHash: null,
+      pinSalt: null,
+      isBiometricsEnabled: false,
+    };
+    setSecurityConfig(updatedConfig);
+    saveSecurityConfig(updatedConfig);
+    setIsAppLocked(false);
+    setToastMessage('✓ Identity verified. Passcode has been reset.');
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col transition-colors">
       {/* Splash Page Animation on App Open */}
       {showSplash && (
         <SplashPage
           onComplete={() => setShowSplash(false)}
+        />
+      )}
+
+      {/* Security Privacy Screen & Authentication Guard */}
+      {isAppLocked && (
+        <SecurityLockGuard
+          mode="unlock"
+          config={securityConfig}
+          onSuccess={() => setIsAppLocked(false)}
+          onForgotPin={handleForgotPinRecovery}
+        />
+      )}
+
+      {/* Security Setup / Change PIN Modal */}
+      {securityModalMode && (
+        <SecurityLockGuard
+          mode={securityModalMode}
+          config={securityConfig}
+          onSuccess={() => setSecurityModalMode(null)}
+          onCancel={() => setSecurityModalMode(null)}
+          onSetupComplete={handleSecuritySetupComplete}
         />
       )}
 
@@ -1034,6 +1167,14 @@ export default function App() {
             setIsWidgetsOpen(true);
           }}
           onReplaySplash={() => setShowSplash(true)}
+          securityConfig={securityConfig}
+          onUpdateSecurityConfig={(newCfg) => {
+            setSecurityConfig(newCfg);
+            saveSecurityConfig(newCfg);
+          }}
+          onOpenSecuritySetup={() => setSecurityModalMode('setup')}
+          onOpenSecurityChange={() => setSecurityModalMode('change')}
+          onLockAppNow={() => setIsAppLocked(true)}
         />
 
         {/* Multi-Device Cloud Sync & Account Modal */}

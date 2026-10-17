@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CurrencyConfig, BudgetConfig, Transaction, CustomTag, ThemeMode } from '../types/finance';
+import { SecurityConfig } from '../types/security';
 import { SUPPORTED_CURRENCIES } from '../utils/formatters';
 import { exportToCSV } from '../utils/storage';
+import { isBiometricsSupported, registerBiometrics } from '../utils/security';
 import {
   Coins,
   Target,
@@ -20,6 +22,10 @@ import {
   Smartphone,
   ChevronRight,
   LayoutGrid,
+  Shield,
+  Lock,
+  Fingerprint,
+  KeyRound,
 } from 'lucide-react';
 import { useHaptics } from '../hooks/useHaptics';
 import { useAuth } from '../context/AuthContext';
@@ -43,6 +49,11 @@ interface SettingsModalProps {
   onOpenAccountModal?: () => void;
   onOpenWidgetsModal?: () => void;
   onReplaySplash?: () => void;
+  securityConfig: SecurityConfig;
+  onUpdateSecurityConfig: (config: SecurityConfig) => void;
+  onOpenSecuritySetup: () => void;
+  onOpenSecurityChange: () => void;
+  onLockAppNow: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -63,6 +74,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenAccountModal,
   onOpenWidgetsModal,
   onReplaySplash,
+  securityConfig,
+  onUpdateSecurityConfig,
+  onOpenSecuritySetup,
+  onOpenSecurityChange,
+  onLockAppNow,
 }) => {
   const { tap, success, warning } = useHaptics();
   const { currentUser, syncStatus } = useAuth();
@@ -70,8 +86,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [savedBudgetNotice, setSavedBudgetNotice] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [supportsBiometrics, setSupportsBiometrics] = useState(false);
+  const [securityNotice, setSecurityNotice] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  // Keep budget input in sync with budget prop
+  useEffect(() => {
+    setBudgetInput(budget.monthlyLimit.toString());
+  }, [budget.monthlyLimit]);
+
+  useEffect(() => {
+    isBiometricsSupported().then(setSupportsBiometrics);
+  }, []);
 
   const handleBudgetSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +178,63 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     };
     reader.readAsText(file);
   };
+
+  const handleTogglePasscode = (enable: boolean) => {
+    tap('light');
+    if (enable) {
+      onOpenSecuritySetup();
+    } else {
+      warning();
+      onUpdateSecurityConfig({
+        ...securityConfig,
+        isEnabled: false,
+        pinHash: null,
+        pinSalt: null,
+        isBiometricsEnabled: false,
+      });
+      setSecurityNotice('Passcode lock disabled');
+      setTimeout(() => setSecurityNotice(null), 2500);
+    }
+  };
+
+  const handleToggleBiometrics = async () => {
+    tap('light');
+    if (!securityConfig.isBiometricsEnabled) {
+      const credId = await registerBiometrics();
+      if (credId) {
+        success();
+        onUpdateSecurityConfig({
+          ...securityConfig,
+          isBiometricsEnabled: true,
+          webAuthnCredentialId: credId,
+        });
+        setSecurityNotice('✓ Biometrics enabled');
+        setTimeout(() => setSecurityNotice(null), 2500);
+      } else {
+        warning();
+        setSecurityNotice('Biometrics setup was cancelled');
+        setTimeout(() => setSecurityNotice(null), 2500);
+      }
+    } else {
+      tap('light');
+      onUpdateSecurityConfig({
+        ...securityConfig,
+        isBiometricsEnabled: false,
+      });
+      setSecurityNotice('Biometrics disabled');
+      setTimeout(() => setSecurityNotice(null), 2500);
+    }
+  };
+
+  const handleToggleAutoLock = () => {
+    tap('light');
+    onUpdateSecurityConfig({
+      ...securityConfig,
+      autoLockOnBackground: !securityConfig.autoLockOnBackground,
+    });
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-200">
@@ -282,6 +364,207 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <ChevronRight size={16} className="text-[#8E8E93]" />
                 </div>
               </button>
+            </div>
+          </div>
+
+          {/* Security & App Lock Section */}
+          <div className="space-y-1.5">
+            <span className="text-[12px] font-semibold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider px-3 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Shield size={13} />
+                <span>Security & App Lock</span>
+              </span>
+              {securityNotice && (
+                <span className="text-[10px] font-semibold text-[#34C759] animate-in fade-in">
+                  {securityNotice}
+                </span>
+              )}
+            </span>
+
+            <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-black/[0.04] dark:border-white/[0.08] divide-y divide-black/[0.04] dark:divide-white/[0.06] overflow-hidden">
+              {/* Row 1: Enable Passcode Lock */}
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      securityConfig.isEnabled
+                        ? 'bg-[#9EE42A]/20 text-[#3F6212] dark:text-[#9EE42A]'
+                        : 'bg-black/[0.05] dark:bg-white/[0.08] text-[#8E8E93]'
+                    }`}
+                  >
+                    <Lock size={19} strokeWidth={2.2} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white leading-tight">
+                        Passcode Lock
+                      </p>
+                      {securityConfig.isEnabled && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#9EE42A]/20 text-[#3F6212] dark:text-[#9EE42A]">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#8E8E93] leading-normal">
+                      {securityConfig.isEnabled
+                        ? '4-digit PIN required on app open'
+                        : 'Protect your financial records with a 4-digit PIN'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleTogglePasscode(!securityConfig.isEnabled)}
+                  className={`w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+                    securityConfig.isEnabled ? 'bg-[#34C759]' : 'bg-[#E5E5EA] dark:bg-[#3A3A3C]'
+                  }`}
+                  role="switch"
+                  aria-checked={securityConfig.isEnabled}
+                  aria-label="Toggle Passcode Lock"
+                >
+                  <div
+                    className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                      securityConfig.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Extended Security Controls (shown when Passcode is enabled) */}
+              {securityConfig.isEnabled && (
+                <>
+                  {/* Row 2: Biometric Unlock (Face ID / Touch ID / Fingerprint) */}
+                  {supportsBiometrics && (
+                    <div className="p-3.5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                            securityConfig.isBiometricsEnabled
+                              ? 'bg-[#007AFF]/15 text-[#007AFF] dark:text-[#0A84FF]'
+                              : 'bg-black/[0.05] dark:bg-white/[0.08] text-[#8E8E93]'
+                          }`}
+                        >
+                          <Fingerprint size={19} strokeWidth={2.2} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white leading-tight">
+                            Face ID / Touch ID
+                          </p>
+                          <p className="text-xs text-[#8E8E93] leading-normal">
+                            Unlock quickly using device biometrics
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleToggleBiometrics}
+                        className={`w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+                          securityConfig.isBiometricsEnabled ? 'bg-[#34C759]' : 'bg-[#E5E5EA] dark:bg-[#3A3A3C]'
+                        }`}
+                        role="switch"
+                        aria-checked={securityConfig.isBiometricsEnabled}
+                        aria-label="Toggle Biometric Unlock"
+                      >
+                        <div
+                          className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                            securityConfig.isBiometricsEnabled ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Row 3: Auto-Lock on Background */}
+                  <div className="p-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-black/[0.05] dark:bg-white/[0.08] text-[#8E8E93] flex items-center justify-center">
+                        <Shield size={18} strokeWidth={2.2} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white leading-tight">
+                          Lock on Background
+                        </p>
+                        <p className="text-xs text-[#8E8E93] leading-normal">
+                          Lock when switching apps or locking device
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleToggleAutoLock}
+                      className={`w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+                        securityConfig.autoLockOnBackground ? 'bg-[#34C759]' : 'bg-[#E5E5EA] dark:bg-[#3A3A3C]'
+                      }`}
+                      role="switch"
+                      aria-checked={securityConfig.autoLockOnBackground}
+                      aria-label="Toggle Lock on Background"
+                    >
+                      <div
+                        className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                          securityConfig.autoLockOnBackground ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Row 4: Change Passcode */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      tap('light');
+                      onClose();
+                      onOpenSecurityChange();
+                    }}
+                    className="w-full p-3.5 flex items-center justify-between text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#007AFF]/10 text-[#007AFF] dark:text-[#0A84FF] flex items-center justify-center">
+                        <KeyRound size={18} strokeWidth={2.2} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white leading-tight">
+                          Change 4-Digit Passcode
+                        </p>
+                        <p className="text-xs text-[#8E8E93] leading-normal">
+                          Set a new 4-digit PIN
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-[#8E8E93]" />
+                  </button>
+
+                  {/* Row 5: Lock Screen Now button to test lock */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      tap('medium');
+                      onClose();
+                      onLockAppNow();
+                    }}
+                    className="w-full p-3.5 flex items-center justify-between text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-orange-500/15 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                        <Lock size={18} strokeWidth={2.2} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#1D1D1F] dark:text-white leading-tight">
+                          Lock Screen Now
+                        </p>
+                        <p className="text-xs text-[#8E8E93] leading-normal">
+                          Immediately activate the privacy lock guard
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                      Lock
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
